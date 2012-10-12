@@ -1,0 +1,17 @@
+<package>
+  <description brief="quadcopterCode">
+
+     quadcopterCode
+
+  </description>
+  <author>sytang</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/quadcopterCode</url>
+  <depend package="ardrone_autonomy"/>
+  <depend package="cv_bridge"/>
+  <depend package="
+
+</package>
+
+

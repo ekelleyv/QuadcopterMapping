@@ -4,7 +4,7 @@ SET(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 SET(CMAKE_DEPENDS_CHECK_CXX
-  "/home/sytang/Dropbox/ros_workspace/quadcopterCode/src/main.cpp" "/home/sytang/Dropbox/ros_workspace/quadcopterCode/build/CMakeFiles/quadcopter_test.dir/src/main.o"
+  "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp" "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles/quadcopter_test.dir/src/main.o"
   )
 SET(CMAKE_CXX_COMPILER_ID "GNU")
 

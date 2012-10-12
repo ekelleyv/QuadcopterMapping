@@ -141,6 +141,7 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "test_ardrone_autonomy");
 	ros::NodeHandle n;
 
+	/*
 	//command take off, hover for two seconds, then land
 	//not sure why this isn't working
 	ROS_INFO("Taking off..");	
@@ -153,6 +154,7 @@ int main(int argc, char** argv) {
 	ROS_INFO("Landing..");
 	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
 	land.publish(empty);
+	*/
 
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);

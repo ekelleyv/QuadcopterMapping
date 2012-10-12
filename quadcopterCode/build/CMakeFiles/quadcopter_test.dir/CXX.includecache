@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/Navdata.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/Navdata.h
 string
 -
 vector
@@ -16,21 +16,21 @@ map
 ostream
 -
 ros/serialization.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/serialization.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/serialization.h
 ros/builtin_message_traits.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/builtin_message_traits.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/builtin_message_traits.h
 ros/message_operations.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/message_operations.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/message_operations.h
 ros/time.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/time.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/time.h
 ros/macros.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/macros.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/macros.h
 ros/assert.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/assert.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/ros/assert.h
 std_msgs/Header.h
-/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/std_msgs/Header.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include/ardrone_autonomy/std_msgs/Header.h
 
-/home/sytang/Dropbox/ros_workspace/quadcopterCode/src/main.cpp
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp
 stdlib.h
 -
 iostream
@@ -62,7 +62,7 @@ opencv/highgui.h
 cv_bridge/CvBridge.h
 -
 ardrone_autonomy/Navdata.h
-/home/sytang/Dropbox/ros_workspace/quadcopterCode/src/ardrone_autonomy/Navdata.h
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/src/ardrone_autonomy/Navdata.h
 
 /opt/ros/fuerte/include/XmlRpcDecl.h
 ros/macros.h

@@ -32,10 +32,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/sytang/Dropbox/ros_workspace/quadcopterCode
+CMAKE_SOURCE_DIR = /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/sytang/Dropbox/ros_workspace/quadcopterCode/build
+CMAKE_BINARY_DIR = /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build
 
 # Utility rule file for rosbuild_precompile.
 
@@ -57,6 +57,6 @@ CMakeFiles/rosbuild_precompile.dir/clean:
 .PHONY : CMakeFiles/rosbuild_precompile.dir/clean
 
 CMakeFiles/rosbuild_precompile.dir/depend:
-	cd /home/sytang/Dropbox/ros_workspace/quadcopterCode/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/sytang/Dropbox/ros_workspace/quadcopterCode /home/sytang/Dropbox/ros_workspace/quadcopterCode /home/sytang/Dropbox/ros_workspace/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/quadcopterCode/build/CMakeFiles/rosbuild_precompile.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles/rosbuild_precompile.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/rosbuild_precompile.dir/depend
 

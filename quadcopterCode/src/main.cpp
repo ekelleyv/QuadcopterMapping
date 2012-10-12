@@ -42,7 +42,7 @@ using namespace std;
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
-#define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/quadcopterCode/bin/" 
+#define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/bin/" 
 
 /*
  * GLOBAL VARIABLES

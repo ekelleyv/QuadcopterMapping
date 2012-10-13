@@ -141,38 +141,40 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "test_ardrone_autonomy");
 	ros::NodeHandle n;
 
-	/*
-	//command take off, hover for two seconds, then land
-	//not sure why this isn't working
-	ROS_INFO("Taking off..");	
-	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
-	std_msgs::Empty empty;
-	takeoff.publish(empty);
-
-	ros::Duration(2).sleep(); //sleep for 2 seconds
-
-	ROS_INFO("Landing..");
-	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
-	land.publish(empty);
-	*/
-
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
-	image_transport::Subscriber frontCam_sub = it.subscribe("ardrone/front/image_raw", 1, imgCB); //foward camera
+	//image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //foward camera
 	//downward camera - no images?
-	//image_transport::Subscriber bottomCam_sub = it.subscribe("ardrone/bottom/image_raw", 1, imgCB); 
+	image_transport::Subscriber bottomCam_sub = it.subscribe("ardrone/bottom/image_raw", 1, imgCB); 
 
 	//subscribe to navdata
-	ros::Subscriber navdata_sub = n.subscribe("ardrone/navdata", 1000, navDataCB);
+	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
 
 	//make openCV windows
 	cvNamedWindow("view");
   	cvStartWindowThread();
 
+	//command take off, hover
+	ROS_INFO("Taking off..");	
+	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
+	while (takeoff.getNumSubscribers() < 1) { ;}
+	std_msgs::Empty empty;
+	takeoff.publish(empty);
+	ros::spinOnce();
+ 
 	while (ros::ok()) {
 		//process ros messages
-		//ros::spin();
+		ros::spin();
+		ROS_INFO("Ending loop..");
 	}
+	
+	//ros::Duration(10).sleep(); //sleep for 2 seconds
+
+	ROS_INFO("Landing..");
+	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
+	while (land.getNumSubscribers() < 1) { ;}
+	land.publish(empty);
+	ros::spinOnce();
 	
 	//exit cleanly
 	cvDestroyWindow("view");

@@ -11,8 +11,8 @@ SET(CMAKE_FORCE_UNIX_PATHS 1)
 # The C and CXX include file search paths:
 SET(CMAKE_C_INCLUDE_PATH
   "../include"
-  "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/cpp/include"
-  "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/srv_gen/cpp/include"
+  "/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/msg_gen/cpp/include"
+  "/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/srv_gen/cpp/include"
   "/opt/ros/fuerte/include"
   "/opt/ros/fuerte/stacks/image_common/image_transport/include"
   "/opt/ros/fuerte/stacks/pluginlib/include"

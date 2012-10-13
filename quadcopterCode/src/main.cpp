@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
+#include <ctime>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -27,6 +28,7 @@ using namespace std;
  */
 #include <ros/ros.h>
 #include <std_msgs/Empty.h>
+ #include <std_srvs/Empty.h>
 #include <image_transport/image_transport.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -50,6 +52,7 @@ using namespace std;
  */
 std::fstream navLog; //name of log file
 long programStart; //time of program start
+struct tm *now; //beginning of programming
 
 /*
  FUNCTION DECLARATIONS
@@ -106,7 +109,9 @@ void imgCB(const sensor_msgs::ImageConstPtr& msg)
 
 	//save .jpg with timestamped name in ROS_WORKSPACE/[programStart]
 	std::stringstream time;
-	time << ROS_WORKSPACE << programStart << "/" << currentTime << ".jpg";
+	time << ROS_WORKSPACE 
+		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
+		<< "/" << currentTime << ".jpg";
 	const std::string tmp = time.str();
 	const char* timeStamp = tmp.c_str();
 
@@ -117,10 +122,13 @@ int main(int argc, char** argv) {
 	//INITIALIZE LOGGING
 	//get current time
    	programStart = myclock();
+   	time_t t = time(0);
+   	now = localtime(&t);
 
-	//make directory for images, named ROS_WORKSPACE/[programStart]
+	//make directory for images, named ROS_WORKSPACE/[datetime]
 	std::stringstream imgDir;
-	imgDir << ROS_WORKSPACE << programStart;
+	imgDir << ROS_WORKSPACE 
+		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
 	const std::string tmp = imgDir.str();
 	const char* imgDirectory = tmp.c_str();
 
@@ -130,50 +138,70 @@ int main(int argc, char** argv) {
     		fprintf(stderr, "ERROR %d: unable to mkdir; %s\n", errno, strerror(errno));
   	}
 
-	//make log file, named ROS_WORKSPACE/navLog_[programStart]
+	//make log file, named ROS_WORKSPACE/navLog_[datetime]
 	std::stringstream navLogStr;
-	navLogStr << ROS_WORKSPACE << "navLog" << programStart << ".txt";
+	navLogStr << ROS_WORKSPACE << "navLog" 
+		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
+		<< ".txt";
 	const std::string tmp2 = navLogStr.str();
 	const char* navLogName = tmp2.c_str();
 
 	navLog.open(navLogName, std::ios_base::out);
 
+	std_msgs::Empty empty;
+	std_srvs::Empty emptyCall;
+
 	//INITALIZE ROS NODES
 	ros::init(argc, argv, "test_ardrone_autonomy");
 	ros::NodeHandle n;
 
-	//command take off, hover for two seconds, then land
-	//not sure why this isn't working
-	ROS_INFO("Taking off..");	
-	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
-	std_msgs::Empty empty;
-	takeoff.publish(empty);
-	ros::spinOnce();
-
-	ros::Duration(2).sleep(); //sleep for 2 seconds
-
-	ROS_INFO("Landing..");
-	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
-	land.publish(empty);
-	ros::spinOnce();
-
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
-	image_transport::Subscriber frontCam_sub = it.subscribe("ardrone/front/image_raw", 1, imgCB); //foward camera
-	//downward camera - no images?
-	//image_transport::Subscriber bottomCam_sub = it.subscribe("ardrone/bottom/image_raw", 1, imgCB); 
+	image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //forward camera
+	image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
+
+	//service call to toggle camera
+	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/togglecam");
 
 	//subscribe to navdata
-	ros::Subscriber navdata_sub = n.subscribe("ardrone/navdata", 1000, navDataCB);
+	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
 
 	//make openCV windows
 	cvNamedWindow("view");
   	cvStartWindowThread();
 
+	//command take off
+	ROS_INFO("Taking off..");	
+	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
+	while (takeoff.getNumSubscribers() < 1) { ;}
+	takeoff.publish(empty);
+	ros::spinOnce();
+
+	//hover for 15 seconds
+	bool cam = false;
 	while (ros::ok()) {
 		//process ros messages
-		ros::spin();
+		ros::spinOnce();
+
+		//get elapsed time
+   		long end = myclock();
+        	long currentTime = (end-programStart)/1000000.0;
+
+		if (currentTime > 10) { break;}
+		else if (currentTime > 5 && cam == false) {
+			if (toggleCam.call(emptyCall)) { ROS_INFO("Toggling camera");}
+			else { ROS_ERROR("Failed to call toggle camera service");}
+
+			cam = true;
+		}
 	}
+
+	//land the quad
+	ROS_INFO("Landing..");
+	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
+	while (land.getNumSubscribers() < 1) { ;}
+	land.publish(empty);
+	ros::spinOnce();
 	
 	//exit cleanly
 	cvDestroyWindow("view");

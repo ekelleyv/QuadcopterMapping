@@ -16,3 +16,4 @@
 *.make
 *.internal
 *.includecache
+*.log

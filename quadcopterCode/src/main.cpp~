@@ -144,9 +144,8 @@ int main(int argc, char** argv) {
 
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
-	//image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //foward camera
-	//downward camera - no images?
-	image_transport::Subscriber bottomCam_sub = it.subscribe("ardrone/bottom/image_raw", 1, imgCB); 
+	image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //foward camera
+	image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); 
 
 	//subscribe to navdata
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
@@ -172,7 +171,9 @@ int main(int argc, char** argv) {
    		long end = myclock();
         	long currentTime = (end-programStart)/1000000.0;
 
-		if (currentTime > 15) { break;}
+		if (currentTime > 30) { break;}
+		else if (currentTime > 2) {
+		}
 	}
 
 	//land the quad

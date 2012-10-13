@@ -1,0 +1,4 @@
+<launch>
+  <node name="ardrone_driver" pkg="ardrone_autonomy" type="listener"/>
+  <node name="controlGUI" pkg="quadcopterCode" type="talker"/>
+</launch>

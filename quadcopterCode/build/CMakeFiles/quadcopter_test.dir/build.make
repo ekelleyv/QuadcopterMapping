@@ -32,10 +32,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode
+CMAKE_SOURCE_DIR = /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build
+CMAKE_BINARY_DIR = /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/quadcopter_test.dir/depend.make
@@ -69,25 +69,25 @@ CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/geometry/tf/ma
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
-CMakeFiles/quadcopter_test.dir/src/main.o: /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/manifest.xml
+CMakeFiles/quadcopter_test.dir/src/main.o: /home/ekelley/ros_workspace/ardrone_autonomy/manifest.xml
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/vision_opencv/opencv2/manifest.xml
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/vision_opencv/cv_bridge/manifest.xml
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/share/std_msgs/manifest.xml
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/geometry/tf/msg_gen/generated
 CMakeFiles/quadcopter_test.dir/src/main.o: /opt/ros/fuerte/stacks/geometry/tf/srv_gen/generated
-CMakeFiles/quadcopter_test.dir/src/main.o: /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/msg_gen/generated
-CMakeFiles/quadcopter_test.dir/src/main.o: /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/ardrone_autonomy/srv_gen/generated
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles $(CMAKE_PROGRESS_1)
+CMakeFiles/quadcopter_test.dir/src/main.o: /home/ekelley/ros_workspace/ardrone_autonomy/msg_gen/generated
+CMakeFiles/quadcopter_test.dir/src/main.o: /home/ekelley/ros_workspace/ardrone_autonomy/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/quadcopter_test.dir/src/main.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/quadcopter_test.dir/src/main.o -c /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/quadcopter_test.dir/src/main.o -c /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp
 
 CMakeFiles/quadcopter_test.dir/src/main.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/quadcopter_test.dir/src/main.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp > CMakeFiles/quadcopter_test.dir/src/main.i
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp > CMakeFiles/quadcopter_test.dir/src/main.i
 
 CMakeFiles/quadcopter_test.dir/src/main.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/quadcopter_test.dir/src/main.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp -o CMakeFiles/quadcopter_test.dir/src/main.s
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/src/main.cpp -o CMakeFiles/quadcopter_test.dir/src/main.s
 
 CMakeFiles/quadcopter_test.dir/src/main.o.requires:
 .PHONY : CMakeFiles/quadcopter_test.dir/src/main.o.requires
@@ -123,6 +123,6 @@ CMakeFiles/quadcopter_test.dir/clean:
 .PHONY : CMakeFiles/quadcopter_test.dir/clean
 
 CMakeFiles/quadcopter_test.dir/depend:
-	cd /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles/quadcopter_test.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles/quadcopter_test.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/quadcopter_test.dir/depend
 

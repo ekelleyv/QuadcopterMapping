@@ -3,7 +3,7 @@
 /*
  main.cpp
  Testing processing of ardrone_autonomy services
- Sarah Tang
+ Sarah Tang and Edward Francis Kelley V
  Senior thesis, 2012-2013
  */
 
@@ -42,6 +42,7 @@ using namespace std;
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
+ //CHANGE TO GLOBAL VAR TODO
 #define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/bin/" 
 
 /*
@@ -141,20 +142,20 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "test_ardrone_autonomy");
 	ros::NodeHandle n;
 
-	/*
 	//command take off, hover for two seconds, then land
 	//not sure why this isn't working
 	ROS_INFO("Taking off..");	
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
 	std_msgs::Empty empty;
 	takeoff.publish(empty);
+	ros::spinOnce();
 
 	ros::Duration(2).sleep(); //sleep for 2 seconds
 
 	ROS_INFO("Landing..");
 	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
 	land.publish(empty);
-	*/
+	ros::spinOnce();
 
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
@@ -171,7 +172,7 @@ int main(int argc, char** argv) {
 
 	while (ros::ok()) {
 		//process ros messages
-		//ros::spin();
+		ros::spin();
 	}
 	
 	//exit cleanly

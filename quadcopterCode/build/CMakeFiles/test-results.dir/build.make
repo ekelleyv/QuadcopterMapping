@@ -32,10 +32,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode
+CMAKE_SOURCE_DIR = /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build
+CMAKE_BINARY_DIR = /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build
 
 # Utility rule file for test-results.
 
@@ -58,6 +58,6 @@ CMakeFiles/test-results.dir/clean:
 .PHONY : CMakeFiles/test-results.dir/clean
 
 CMakeFiles/test-results.dir/depend:
-	cd /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles/test-results.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build /home/ekelley/ros_workspace/QuadcopterMapping/quadcopterCode/build/CMakeFiles/test-results.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/test-results.dir/depend
 

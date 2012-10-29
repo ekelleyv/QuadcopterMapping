@@ -1,4 +1,5 @@
 <launch>
-  <node name="ardrone_driver" pkg="ardrone_autonomy" type="listener"/>
-  <node name="controlGUI" pkg="quadcopterCode" type="talker"/>
+  <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" launch-prefix="xterm -e"/>
+  <node name="controlGUI" pkg="quadcopterCode" type="controlGUI.py" launch-prefix="xterm -e"/>
+  <node name="video_feed" pkg="image_view" type="image_view" args="image:=/ardrone/image_raw"/>
 </launch>

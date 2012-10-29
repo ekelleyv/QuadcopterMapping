@@ -2,6 +2,7 @@
  
 import sys
 import gamepad
+import time
 try:
 	#PyGtk library import
  	import pygtk
@@ -32,6 +33,7 @@ class controlGUI:
 		self.window = gtk.Window()
 		self.window.set_title("Quadcopter Control Tower")
 		self.window.set_default_size(300, 100)
+		# self.window.add_events(gtk.gdk.BUTTON_PRESS_MASK)
 
 		self.create_widgets()
 		self.connect_signals()
@@ -41,8 +43,9 @@ class controlGUI:
 		self.land_pub = rospy.Publisher('ardrone/land', Empty)
 		self.reset_pub = rospy.Publisher('ardrone/reset', Empty)
 		self.twist_pub = rospy.Publisher('cmd_vel', Twist)
-		rospy.init_node('talker')
 		self.twist = Twist()
+		rospy.init_node("controlGUI")
+
 
 		
 
@@ -113,12 +116,20 @@ class controlGUI:
 		self.d2.connect("pressed", self.alt_down)
 		self.r2.connect("pressed", self.yaw_right)
 
+		# self.window.connect("key-press-event", self.keypress)
+
 		self.window.connect("destroy", self.destroy_window)
+
+	# def keypress(self, widget, event):
+	# 	# print "%d" % event.get_state()
+	# 	return
 
 	def takeoff(self, widget):
 		#Simple button cliked event
+		self.hover()
 		print "Taking off!"
 		self.takeoff_pub.publish(Empty())
+
 
 	def land(self, widget):
 		#Simple button cliked event
@@ -131,50 +142,83 @@ class controlGUI:
 		
 		print "Reset!"
 		self.reset_pub.publish(Empty())
-
-	def talker(self):
-	    	#ROS message hello world
-	    if not rospy.is_shutdown():
-		str = "hello world %s"%rospy.get_time()
-		rospy.loginfo(str)
-		self.pub.publish(String(str))
+		self.hover()
 
 	def yaw_left(self, widget):
 		print("Yaw left")
 		self.hover()
-		self.twist.angular.z=-1
-		self.twist_pub.publish(self.twist)	
-		time.sleep(1)	
-		self.twist.angular.z=0
+		self.twist.angular.z=.5
 		self.twist_pub.publish(self.twist)
-
+		time.sleep(.5)
+		self.hover()
 
 	def yaw_right(self, widget):
 		print("Yaw right")
+		self.hover()
+		self.twist.angular.z=-.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(.5)
+		self.hover()
 
 	def alt_up(self, widget):
 		print("Up")
+		self.hover()
+		self.twist.linear.z=.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(.5)
+		self.hover()
 
 	def alt_down(self, widget):
 		print("Down")
+		self.hover()
+		self.twist.linear.z=-.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(.5)
+		self.hover()
 
 	def pitch_left(self, widget):
 		print("Pitch left")
+		self.hover()
+		self.twist.linear.y=.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(.5)
+		self.hover()
 
 	def pitch_right(self, widget):
 		print("Pitch right")
+		self.hover()
+		self.twist.linear.y=-.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(.5)
+		self.hover()
 
 	def pitch_forward(self, widget):
 		print("Pitch forward")
+		self.hover()
+		self.twist.linear.x=.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(1)
+		self.hover()
 
 	def pitch_back(self, widget):
 		print("Pitch back")
+		self.hover()
+		self.twist.linear.x=-.5
+		self.twist_pub.publish(self.twist)
+		time.sleep(1)
+		self.hover()
 
 	def hover(self):
 		self.twist.linear.x = 0; self.twist.linear.y = 0; self.twist.linear.z = 0
 		self.twist.angular.x = 0; self.twist.angular.y = 0; self.twist.angular.z = 0
 		self.twist_pub.publish(self.twist)
-
+	def getKey():
+		tty.setraw(sys.stdin.fileno())
+		select.select([sys.stdin], [], [], 0)
+		key = sys.stdin.read(1)
+		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
+		print "You pressed " + key
+		return key
 	def destroy_window(self,widget):
 		#MainWindow_destroy event
 		sys.exit(0)

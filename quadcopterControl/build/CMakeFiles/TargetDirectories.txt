@@ -1,0 +1,16 @@
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/ROSBUILD_genmsg_cpp.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/ROSBUILD_genmsg_lisp.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/ROSBUILD_gensrv_cpp.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/ROSBUILD_gensrv_lisp.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/clean-test-results.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/quadcopter_control.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/rosbuild_precompile.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/rosbuild_premsgsrvgen.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/rospack_genmsg.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/rospack_genmsg_libexe.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/rospack_gensrv.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/test.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/test-future.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/test-results.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/test-results-run.dir
+/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles/tests.dir

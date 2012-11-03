@@ -33,11 +33,25 @@ using namespace std;
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <cv_bridge/CvBridge.h>
+#include <geometry_msgs/Twist.h>
 
 /*
  * ARDRONE_AUTONOMY INCLUDES
  */
 #include "ardrone_autonomy/Navdata.h"
+
+/*
+ * AR.DRONE LIBRARY INCLUDES
+ */
+/*#include <ardrone_tool/ardrone_version.h>
+#include <ardrone_tool/ardrone_tool.h>
+#include <ardrone_tool/ardrone_tool_configuration.h>  
+#include <ardrone_tool/Com/config_com.h>
+#include <ardrone_tool/UI/ardrone_input.h>
+#include <ardrone_tool/Video/video_com_stage.h>
+#include <ardrone_tool/Control/ardrone_control.h>
+#include <ardrone_tool/Navdata/ardrone_navdata_client.h>
+*/
 
 /*
  * DEFINITIONS
@@ -177,6 +191,21 @@ int main(int argc, char** argv) {
 	takeoff.publish(empty);
 	ros::spinOnce();
 
+	//initialize cmd_vel
+	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("\cmd_vel", 1000);
+	while (cmd_vel.getNumSubscribers() < 1) { ;}
+	geometry_msgs::Twist velocity;
+	velocity.linear.x = 0;
+	velocity.linear.y = 0;
+	velocity.linear.z = 0;	
+	velocity.angular.x = 0;
+	velocity.angular.y = 0;
+	velocity.angular.z = 0.0;
+	cmd_vel.publish(velocity);
+	ros::spinOnce(); //reset velocity
+
+	int32_t controlFlag = 0;
+
 	//hover for 15 seconds
 	bool cam = false;
 	while (ros::ok()) {
@@ -187,10 +216,21 @@ int main(int argc, char** argv) {
    		long end = myclock();
         	long currentTime = (end-programStart)/1000000.0;
 
-		if (currentTime > 10) { break;}
-		if (currentTime > 9) {
+		if (currentTime > 8) { break;}
+		if (currentTime > 4) {
 			ROS_INFO("Sending command to turn...");
-			ardrone_at_set_progress_cmd(0, 0.1, 0, 0, 0);
+			velocity.linear.x = 0;
+			velocity.linear.y = -0.3;
+			velocity.linear.z = 0;	
+			velocity.angular.x = 0;
+			velocity.angular.y = 0;
+			velocity.angular.z = 0;
+
+			cmd_vel.publish(velocity);
+			ros::spinOnce();
+			
+	  		//ardrone_at_set_progress_cmd(controlFlag, 0.0, 0.0, 0.0, 0.2);
+			//ardrone_tool_set_progressive_cmd(controlFlag, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 		}
 		//command to toggle camera
 		/*else if (currentTime > 5 && cam == false) {
@@ -202,7 +242,9 @@ int main(int argc, char** argv) {
 	}
 
 	//land the quad
-	ardrone_at_set_progress_cmd(0, 0.1, 0, 0, 0);
+//	ROS_INFO("Sending command to stop turning...");
+	//ardrone_tool_set_progressive_cmd(controlFlag, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+//	  ardrone_at_set_progress_cmd(input_state.pcmd.flag, input_state.pcmd.phi, input_state.pcmd.theta, input_state.pcmd.gaz, input_state.pcmd.yaw);
 
 	ROS_INFO("Landing..");
 	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);

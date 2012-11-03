@@ -27,12 +27,5 @@ link_directories(${PROJECT_SOURCE_DIR}/lib/)
 include_directories(${SDK} ${SDK}/FFMPEG/Includes ${SDK}/Soft/Common ${SDK}/Soft/Lib ${SDK}/VP_SDK ${SDK}/VP_SDK/VP_Os/linux )
 rosbuild_add_executable(quadcopter_control src/main.cpp)
 #target_link_libraries(ardrone_driver vlib pc_ardrone sdk SDL avcodec avdevice avfilter avformat avutil swscale)
-target_link_libraries(quadcopter_control pc_ardrone avcodec avutil swscale vlib  sdk SDL )
+target_link_libraries(quadcopter_control pc_ardrone avcodec avdevice avfilter avformat pc_ardrone_notool avutil swscale vlib  sdk SDL )
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})

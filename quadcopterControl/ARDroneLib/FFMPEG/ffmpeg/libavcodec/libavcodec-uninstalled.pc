@@ -1,0 +1,12 @@
+prefix=
+exec_prefix=
+libdir=${pcfiledir}
+includedir=/home/sytang/Dropbox/ros_workspace/ardrone_autonomy/ARDroneLib/FFMPEG/ffmpeg
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 53.7.0
+Requires: libavutil = 51.9.1
+Conflicts:
+Libs: ${libdir}/libavcodec.a -lSDL -lm -pthread -lbz2 -lz 
+Cflags: -I${includedir}

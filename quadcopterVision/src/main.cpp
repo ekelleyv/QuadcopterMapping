@@ -39,6 +39,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+ #define ROS_WORKSPACE "/home/ekelley/"
+
 using namespace std;
 using namespace cv;
 
@@ -46,11 +48,21 @@ using namespace cv;
 //Store all constants for image encodings in the enc namespace to be used later.
 namespace enc = sensor_msgs::image_encodings;
 
+long programStart; //time of program start
+struct tm *now; //beginning of programming
+int image_number;
+
 //Declare a string with the name of the window that we will create using OpenCV where processed images will be displayed.
 static const char WINDOW[] = "Image Processed";
 
 //Use method of ImageTransport to create image publisher
 image_transport::Publisher pub;
+
+long myclock() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000000) + tv.tv_usec;
+}
 
 //This function is called everytime a new image is published
 void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
@@ -72,6 +84,30 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 		return;
 	}
 
+	long end = myclock();
+    long currentTime = (end-programStart)/1000000.0;
+
+	// //Save image
+	// std::stringstream folder;
+	// folder << ROS_WORKSPACE 
+	// 	<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
+	// const std::string tmp = folder.str();
+	// const char* foldertimeStamp = tmp.c_str();
+
+    // time_t rawtime;
+    // struct tm* timeinfo;
+    // char folder_buffer [80];
+    // char file_buffer [80];
+
+    // time(&rawtime);
+    // time info = localtime(&rawtime);
+    // strftime (folder_buffer, 80, "%Y-%m-%d-%H-%M", timeinfo);
+    // strftime (file_buffer, 80, "%Y-%m-%d-%H-%M-%S", timeinfo);
+	system("mkdir -p /home/ekelley/images");
+	std::stringstream image_string;
+	image_string << image_number;
+	imwrite("/home/ekelley/images/" + image_string.str() + ".jpg", mat);
+	image_number++;
 	
 	cv::SiftFeatureDetector a;
 	vector<KeyPoint> keypoints;
@@ -109,6 +145,11 @@ int main(int argc, char **argv)
 	*/
 	ROS_INFO("quadcopterVision::main.cpp::STARTING.");
     ros::init(argc, argv, "image_processor");
+
+    programStart = myclock();
+   	time_t t = time(0);
+   	now = localtime(&t);
+   	image_number = 0;
 	/**
 	* NodeHandle is the main access point to communications with the ROS system.
 	* The first NodeHandle constructed will fully initialize this node, and the last

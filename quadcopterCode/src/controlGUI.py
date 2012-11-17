@@ -21,6 +21,8 @@ import os
 from std_msgs.msg import String, Empty
 from geometry_msgs.msg import Twist
 class controlGUI:
+
+
 	def __init__(self):
 		#Set the path to Glade file, in the ros_glade ROS package
 		# str=roslib.packages.get_pkg_dir('quadcopterCode')+"/src/gui/quadcopterGUITest.glade"
@@ -33,6 +35,15 @@ class controlGUI:
 		self.window = gtk.Window()
 		self.window.set_title("Quadcopter Control Tower")
 		self.window.set_default_size(300, 100)
+		self.toggle_mode = False
+		self.is_yaw_left = False
+		self.is_yaw_right = False
+		self.is_alt_up = False
+		self.is_alt_down = False
+		self.is_pitch_left = False
+		self.is_pitch_right = False
+		self.is_pitch_forward = False
+		self.is_pitch_back = False
 		# self.window.add_events(gtk.gdk.BUTTON_PRESS_MASK)
 
 		self.create_widgets()
@@ -55,9 +66,11 @@ class controlGUI:
 		self.takeoff_button = gtk.Button("Takeoff")
 		self.land_button = gtk.Button("Land")
 		self.reset_button = gtk.Button("Reset")
+		self.toggle_button = gtk.Button("Toggle Mode")
 		self.hbox_1.pack_start(self.takeoff_button)
 		self.hbox_1.pack_start(self.land_button)
 		self.hbox_1.pack_start(self.reset_button)
+		self.hbox_1.pack_start(self.toggle_button)
 
 		self.label = gtk.Label("Welcome to Control Tower")
 		self.vbox.pack_start(self.label)
@@ -105,6 +118,7 @@ class controlGUI:
 		self.takeoff_button.connect("clicked", self.takeoff)
 		self.land_button.connect("clicked", self.land)
 		self.reset_button.connect("clicked", self.reset)
+		self.toggle_button.connect("clicked", self.toggle)
 
 		self.u1.connect("pressed", self.pitch_forward)
 		self.l1.connect("pressed", self.pitch_left)
@@ -144,69 +158,151 @@ class controlGUI:
 		self.reset_pub.publish(Empty())
 		self.hover()
 
+	def toggle(self, widget):
+		self.toggle_mode = not self.toggle_mode
+
+		if (self.toggle_mode):
+			print "Toggle mode engaged"
+		else:
+			print "Out of toggle mode"
+
 	def yaw_left(self, widget):
 		print("Yaw left")
-		self.hover()
-		self.twist.angular.z=.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(.5)
-		self.hover()
+		self.is_yaw_left = not self.is_yaw_left
+
+		if (self.toggle_mode):
+			if (self.is_yaw_left):
+				self.hover()
+				self.twist.angular.z=.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.angular.z=.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(.5)
+			self.hover()
 
 	def yaw_right(self, widget):
 		print("Yaw right")
-		self.hover()
-		self.twist.angular.z=-.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(.5)
-		self.hover()
+		if (self.toggle_mode):
+			self.is_yaw_right = not self.is_yaw_right
+			if (self.is_yaw_right):
+				self.hover()
+				self.twist.angular.z=-.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.angular.z=-.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(.5)
+			self.hover()
 
 	def alt_up(self, widget):
 		print("Up")
-		self.hover()
-		self.twist.linear.z=.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(.5)
-		self.hover()
+
+		if (self.toggle_mode):
+			self.is_alt_up = not self.is_alt_up
+			if (self.is_alt_up):
+				self.hover()
+				self.twist.linear.z=.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.linear.z=.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(.5)
+			self.hover()
 
 	def alt_down(self, widget):
 		print("Down")
-		self.hover()
-		self.twist.linear.z=-.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(.5)
-		self.hover()
+		if (self.toggle_mode):
+			self.is_alt_down = not self.is_alt_down
+			if (self.is_alt_down):
+				self.hover()
+				self.twist.linear.z=-.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.linear.z=-.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(.5)
+			self.hover()
 
 	def pitch_left(self, widget):
 		print("Pitch left")
-		self.hover()
-		self.twist.linear.y=.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(.5)
-		self.hover()
+		if (self.toggle_mode):
+			self.is_pitch_left = not self.is_pitch_left
+			if (self.is_pitch_left):
+				self.hover()
+				self.twist.linear.y=.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.linear.y=.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(.5)
+			self.hover()
 
 	def pitch_right(self, widget):
 		print("Pitch right")
-		self.hover()
-		self.twist.linear.y=-.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(.5)
-		self.hover()
+		if (self.toggle_mode):
+			self.is_pitch_right = not self.is_pitch_right
+			if (self.is_pitch_right):
+				self.hover()
+				self.twist.linear.y=-.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.linear.y=-.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(.5)
+			self.hover()
 
 	def pitch_forward(self, widget):
 		print("Pitch forward")
-		self.hover()
-		self.twist.linear.x=.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(1)
-		self.hover()
+		if (self.toggle_mode):
+			self.is_pitch_forward = not self.is_pitch_forward
+			if (self.is_pitch_forward):
+				self.hover()
+				self.twist.linear.x=.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.linear.x=.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(1)
+			self.hover()
 
 	def pitch_back(self, widget):
 		print("Pitch back")
-		self.hover()
-		self.twist.linear.x=-.5
-		self.twist_pub.publish(self.twist)
-		time.sleep(1)
-		self.hover()
+		if (self.toggle_mode):
+			self.is_pitch_back = not self.is_pitch_back
+			if (self.is_pitch_back):
+				self.hover()
+				self.twist.linear.x=-.5
+				self.twist_pub.publish(self.twist)
+			else:
+				self.hover()
+		else:
+			self.hover()
+			self.twist.linear.x=-.5
+			self.twist_pub.publish(self.twist)
+			time.sleep(1)
+			self.hover()
 
 	def hover(self):
 		self.twist.linear.x = 0; self.twist.linear.y = 0; self.twist.linear.z = 0

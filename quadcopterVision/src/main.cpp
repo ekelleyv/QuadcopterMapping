@@ -40,6 +40,7 @@
 #include <sys/types.h>
 
  #define ROS_WORKSPACE "/home/ekelley/"
+ #define MY_MASK 0777
 
 using namespace std;
 using namespace cv;
@@ -48,9 +49,12 @@ using namespace cv;
 //Store all constants for image encodings in the enc namespace to be used later.
 namespace enc = sensor_msgs::image_encodings;
 
-long programStart; //time of program start
+//Global variables
 struct tm *now; //beginning of programming
 int image_number;
+vector<KeyPoint> last_keypoints;
+Mat last_descriptors;
+
 
 //Declare a string with the name of the window that we will create using OpenCV where processed images will be displayed.
 static const char WINDOW[] = "Image Processed";
@@ -58,11 +62,10 @@ static const char WINDOW[] = "Image Processed";
 //Use method of ImageTransport to create image publisher
 image_transport::Publisher pub;
 
-long myclock() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (tv.tv_sec * 1000000) + tv.tv_usec;
-}
+//Function definitions
+void imageCallback(const sensor_msgs::ImageConstPtr& original_image);
+Mat add_match_lines(Mat img, KeyPoint last, KeyPoint current);
+Mat compute_matches( Mat color_img);
 
 //This function is called everytime a new image is published
 void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
@@ -84,40 +87,33 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 		return;
 	}
 
-	long end = myclock();
-    long currentTime = (end-programStart)/1000000.0;
-
-	// //Save image
-	// std::stringstream folder;
-	// folder << ROS_WORKSPACE 
-	// 	<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
-	// const std::string tmp = folder.str();
-	// const char* foldertimeStamp = tmp.c_str();
-
-    // time_t rawtime;
-    // struct tm* timeinfo;
-    // char folder_buffer [80];
-    // char file_buffer [80];
-
-    // time(&rawtime);
-    // time info = localtime(&rawtime);
-    // strftime (folder_buffer, 80, "%Y-%m-%d-%H-%M", timeinfo);
-    // strftime (file_buffer, 80, "%Y-%m-%d-%H-%M-%S", timeinfo);
-	system("mkdir -p /home/ekelley/images");
 	std::stringstream image_string;
 	image_string << image_number;
-	imwrite("/home/ekelley/images/" + image_string.str() + ".jpg", mat);
+
+	std::stringstream time;
+	time << ROS_WORKSPACE 
+		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
+		<< "/" << image_string.str() << ".jpg";
+	const std::string tmp = time.str();
+	const char* timeStamp = tmp.c_str();
+
+	
+
+	imwrite(timeStamp, mat);
+
+	mat = compute_matches(mat);
 	image_number++;
 	
-	cv::SiftFeatureDetector a;
-	vector<KeyPoint> keypoints;
-	a.detect(mat, keypoints);
+	// cv::SiftFeatureDetector a;
+	// vector<KeyPoint> keypoints;
+	// a.detect(mat, keypoints);
+	// drawKeypoints(mat, keypoints, mat);
 
-	drawKeypoints(mat, keypoints, mat);
+
 	//Display the image using OpenCV
-	cv::imshow(WINDOW, mat);
+	imshow(WINDOW, mat);
 	//Add some delay in miliseconds. The function only works if there is at least one HighGUI window created and the window is active. If there are several HighGUI windows, any of them can be active.
-	cv::waitKey(3);
+	waitKey(3);
 	/**
 	* The publish() function is how you send messages. The parameter
 	* is the message object. The type of this object must agree with the type
@@ -127,6 +123,92 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 	//Convert the CvImage to a ROS image message and publish it on the "camera/image_processed" topic.
     pub.publish(cv_ptr->toImageMsg());
 }
+
+/*Adapted from:
+http://docs.opencv.org/2.4.3rc/doc/tutorials/features2d/feature_flann_matcher/feature_flann_matcher.html
+*/
+Mat compute_matches(Mat color_img) {
+
+	Mat img;
+
+	Mat output_img = color_img;
+
+	cvtColor(color_img, img, CV_BGR2GRAY);
+
+	//-- Step 1: Detect the keypoints using SURF Detector
+	int minHessian = 900;
+
+	//SurfFeatureDetector detector( minHessian );
+	SiftFeatureDetector detector;
+
+	vector<KeyPoint> keypoints;
+
+	detector.detect( img, keypoints );
+
+	//-- Step 2: Calculate descriptors (feature vectors)
+	SurfDescriptorExtractor extractor;
+
+	Mat descriptors;
+
+	extractor.compute( img, keypoints, descriptors );
+
+	if (image_number == 0) {
+		last_keypoints = keypoints;
+		last_descriptors = descriptors;
+		return color_img;
+	}
+	else {
+		//-- Step 3: Matching descriptor vectors using FLANN matcher
+		FlannBasedMatcher matcher;
+		vector< DMatch > matches;
+		ROS_INFO("There were %d keypoints and %d descriptors", last_keypoints.size(), last_descriptors.rows);
+		matcher.match( last_descriptors, descriptors, matches );
+
+		double max_dist = 0; double min_dist = 100;
+
+		//-- Quick calculation of max and min distances between keypoints
+		for ( int i = 0; i < descriptors.rows; i++ ) { 
+			double dist = matches[i].distance;
+			if( dist < min_dist ) min_dist = dist;
+			if( dist > max_dist ) max_dist = dist;
+		}
+
+		ROS_INFO("Min: %f, Max: %f", min_dist, max_dist);
+
+		//-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
+		//-- PS.- radiusMatch can also be used here.
+		vector< DMatch > good_matches;
+
+		for ( int i = 0; i < descriptors.rows; i++ ) { 
+			if( matches[i].distance < (2.0*min_dist + .1) ) {
+				good_matches.push_back( matches[i]);
+			}
+		}
+
+		//ROS_INFO("There are %d good matches", good_matches.size());
+
+		//Draw matches
+		for (unsigned int i = 0; i < matches.size(); i++) {
+			DMatch current_match = matches[i];
+			//ROS_INFO("Matching last #%d to #%d. There are %d last keypoints and %d keypoints", current_match.trainIdx, current_match.queryIdx, last_keypoints.size(), keypoints.size());
+			if ((current_match.trainIdx < last_keypoints.size()) && (current_match.queryIdx < keypoints.size())) {
+				output_img = add_match_lines(output_img, last_keypoints[current_match.trainIdx], keypoints[current_match.queryIdx]);
+			}
+		}
+
+		last_keypoints = keypoints;
+		last_descriptors = descriptors;
+		return output_img;
+	}
+
+ }
+
+ Mat add_match_lines(Mat img, KeyPoint last, KeyPoint current) {
+ 	circle(img, last.pt, 4, Scalar(0.0, 0.0, 1.0, 0.0));
+ 	circle(img, current.pt, 4, Scalar(1.0, 0.0, 0.0, 0.0));
+ 	line(img, last.pt, current.pt, Scalar(0.0, 1.0, 0.0, 0.0));
+ 	return img;
+ }
 
 /**
 * This tutorial demonstrates simple image conversion between ROS image message and OpenCV formats and image processing
@@ -145,11 +227,31 @@ int main(int argc, char **argv)
 	*/
 	ROS_INFO("quadcopterVision::main.cpp::STARTING.");
     ros::init(argc, argv, "image_processor");
+    ROS_INFO("quadcopterVision::main.cpp::Test.");
 
-    programStart = myclock();
+    ROS_INFO("Started node.");
+   	image_number = 0;
+
    	time_t t = time(0);
    	now = localtime(&t);
-   	image_number = 0;
+
+	//make directory for images, named ROS_WORKSPACE/[datetime]
+	std::stringstream imgDir;
+	imgDir << ROS_WORKSPACE 
+		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
+	const std::string tmp = imgDir.str();
+	const char* imgDirectory = tmp.c_str();
+
+	int temp;
+	temp = umask(0);
+  	if ((temp = mkdir(imgDirectory, MY_MASK)) != 0) {
+    		fprintf(stderr, "ERROR %d: unable to mkdir; %s\n", errno, strerror(errno));
+  	}
+
+  	ROS_INFO("Created folder");
+	
+
+
 	/**
 	* NodeHandle is the main access point to communications with the ROS system.
 	* The first NodeHandle constructed will fully initialize this node, and the last

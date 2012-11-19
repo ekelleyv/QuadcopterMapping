@@ -35,7 +35,7 @@ class controlGUI:
 		self.window = gtk.Window()
 		self.window.set_title("Quadcopter Control Tower")
 		self.window.set_default_size(300, 100)
-		self.toggle_mode = False
+		self.toggle_mode = True
 		self.is_yaw_left = False
 		self.is_yaw_right = False
 		self.is_alt_up = False
@@ -44,6 +44,10 @@ class controlGUI:
 		self.is_pitch_right = False
 		self.is_pitch_forward = False
 		self.is_pitch_back = False
+
+		self.yaw_vel = .4
+		self.alt_vel = .6
+		self.pitch_vel = .1
 		# self.window.add_events(gtk.gdk.BUTTON_PRESS_MASK)
 
 		self.create_widgets()
@@ -173,13 +177,13 @@ class controlGUI:
 		if (self.toggle_mode):
 			if (self.is_yaw_left):
 				self.hover()
-				self.twist.angular.z=.5
+				self.twist.angular.z=self.yaw_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.angular.z=.5
+			self.twist.angular.z=self.yaw_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(.5)
 			self.hover()
@@ -190,13 +194,13 @@ class controlGUI:
 			self.is_yaw_right = not self.is_yaw_right
 			if (self.is_yaw_right):
 				self.hover()
-				self.twist.angular.z=-.5
+				self.twist.angular.z=-self.yaw_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.angular.z=-.5
+			self.twist.angular.z=-self.yaw_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(.5)
 			self.hover()
@@ -208,13 +212,13 @@ class controlGUI:
 			self.is_alt_up = not self.is_alt_up
 			if (self.is_alt_up):
 				self.hover()
-				self.twist.linear.z=.5
+				self.twist.linear.z=self.alt_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.linear.z=.5
+			self.twist.linear.z=self.alt_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(.5)
 			self.hover()
@@ -225,13 +229,13 @@ class controlGUI:
 			self.is_alt_down = not self.is_alt_down
 			if (self.is_alt_down):
 				self.hover()
-				self.twist.linear.z=-.5
+				self.twist.linear.z=-self.alt_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.linear.z=-.5
+			self.twist.linear.z=-self.alt_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(.5)
 			self.hover()
@@ -242,13 +246,13 @@ class controlGUI:
 			self.is_pitch_left = not self.is_pitch_left
 			if (self.is_pitch_left):
 				self.hover()
-				self.twist.linear.y=.5
+				self.twist.linear.y=self.pitch_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.linear.y=.5
+			self.twist.linear.y=self.pitch_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(.5)
 			self.hover()
@@ -259,13 +263,13 @@ class controlGUI:
 			self.is_pitch_right = not self.is_pitch_right
 			if (self.is_pitch_right):
 				self.hover()
-				self.twist.linear.y=-.5
+				self.twist.linear.y=-self.pitch_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.linear.y=-.5
+			self.twist.linear.y=-self.pitch_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(.5)
 			self.hover()
@@ -276,13 +280,13 @@ class controlGUI:
 			self.is_pitch_forward = not self.is_pitch_forward
 			if (self.is_pitch_forward):
 				self.hover()
-				self.twist.linear.x=.5
+				self.twist.linear.x=self.pitch_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.linear.x=.5
+			self.twist.linear.x=self.pitch_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(1)
 			self.hover()
@@ -293,13 +297,13 @@ class controlGUI:
 			self.is_pitch_back = not self.is_pitch_back
 			if (self.is_pitch_back):
 				self.hover()
-				self.twist.linear.x=-.5
+				self.twist.linear.x=-self.pitch_vel
 				self.twist_pub.publish(self.twist)
 			else:
 				self.hover()
 		else:
 			self.hover()
-			self.twist.linear.x=-.5
+			self.twist.linear.x=-self.pitch_vel
 			self.twist_pub.publish(self.twist)
 			time.sleep(1)
 			self.hover()

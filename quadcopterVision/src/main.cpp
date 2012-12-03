@@ -45,6 +45,19 @@
 using namespace std;
 using namespace cv;
 
+// Record the execution time of some code, in milliseconds.
+#define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
+#define START_TIMING(s)    timeStart_##s = cvGetTickCount()
+#define STOP_TIMING(s) 	   timeDiff_##s = (double)(cvGetTickCount() - timeStart_##s); timeTally_##s += timeDiff_##s; countTally_##s++
+#define GET_TIMING(s) 	   (double)(timeDiff_##s / (cvGetTickFrequency()*1000.0))
+#define GET_AVERAGE_TIMING(s)   (double)(countTally_##s ? timeTally_##s/ ((double)countTally_##s * cvGetTickFrequency()*1000.0) : 0)
+#define CLEAR_AVERAGE_TIMING(s) timeTally_##s = 0; countTally_##s = 0
+
+//Runtime options
+bool webcam = true;//true;
+bool save_images = false;
+
+DECLARE_TIMING(my_timer);
 
 //Store all constants for image encodings in the enc namespace to be used later.
 namespace enc = sensor_msgs::image_encodings;
@@ -70,6 +83,8 @@ Mat compute_matches( Mat color_img);
 //This function is called everytime a new image is published
 void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 {
+	START_TIMING(my_timer);
+	// ROS_INFO("In callback");
 	//Convert from the ROS image message to a CvImage suitable for working with OpenCV for processing
 	cv_bridge::CvImagePtr cv_ptr;
 	Mat mat;
@@ -87,19 +102,20 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 		return;
 	}
 
-	std::stringstream image_string;
-	image_string << image_number;
+	if (save_images) {
+		std::stringstream image_string;
+		image_string << image_number;
 
-	std::stringstream time;
-	time << ROS_WORKSPACE 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
-		<< "/" << image_string.str() << ".jpg";
-	const std::string tmp = time.str();
-	const char* timeStamp = tmp.c_str();
+		std::stringstream time;
+		time << ROS_WORKSPACE 
+			<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
+			<< "/" << image_string.str() << ".jpg";
+		const std::string tmp = time.str();
+		const char* timeStamp = tmp.c_str();
 
-	
-
-	imwrite(timeStamp, mat);
+		
+		imwrite(timeStamp, mat);
+	}
 
 	mat = compute_matches(mat);
 	image_number++;
@@ -122,6 +138,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& original_image)
 	*/
 	//Convert the CvImage to a ROS image message and publish it on the "camera/image_processed" topic.
     pub.publish(cv_ptr->toImageMsg());
+    STOP_TIMING(my_timer);
+    ROS_INFO("timing = %f", GET_TIMING(my_timer));
 }
 
 /*Adapted from:
@@ -138,8 +156,8 @@ Mat compute_matches(Mat color_img) {
 	//-- Step 1: Detect the keypoints using SURF Detector
 	int minHessian = 900;
 
-	//SurfFeatureDetector detector( minHessian );
-	SiftFeatureDetector detector;
+	SurfFeatureDetector detector( minHessian );
+	//SiftFeatureDetector detector;
 
 	vector<KeyPoint> keypoints;
 
@@ -161,10 +179,10 @@ Mat compute_matches(Mat color_img) {
 		//-- Step 3: Matching descriptor vectors using FLANN matcher
 		FlannBasedMatcher matcher;
 		vector< DMatch > matches;
-		ROS_INFO("There were %d keypoints and %d descriptors", last_keypoints.size(), last_descriptors.rows);
+		// ROS_INFO("There were %d keypoints and %d descriptors", last_keypoints.size(), last_descriptors.rows);
 		matcher.match( last_descriptors, descriptors, matches );
 
-		double max_dist = 0; double min_dist = 100;
+		double max_dist = 0; double min_dist = 1000;
 
 		//-- Quick calculation of max and min distances between keypoints
 		for ( int i = 0; i < descriptors.rows; i++ ) { 
@@ -173,26 +191,37 @@ Mat compute_matches(Mat color_img) {
 			if( dist > max_dist ) max_dist = dist;
 		}
 
-		ROS_INFO("Min: %f, Max: %f", min_dist, max_dist);
+		// ROS_INFO("Min: %f, Max: %f", min_dist, max_dist);
 
 		//-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist )
 		//-- PS.- radiusMatch can also be used here.
 		vector< DMatch > good_matches;
+		vector <double> distances;
 
 		for ( int i = 0; i < descriptors.rows; i++ ) { 
-			if( matches[i].distance < (2.0*min_dist + .1) ) {
+			// distances.push_back(matches[i].distance);
+			if( matches[i].distance < .3) {
 				good_matches.push_back( matches[i]);
 			}
 		}
 
 		//ROS_INFO("There are %d good matches", good_matches.size());
 
+		  // Mat img_matches;
+		  // drawMatches( img, last_keypoints, color_img, keypoints,
+		  //              good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+		  //              vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+
+
+		  //-- Show detected matches
+		  // imshow( "Good Matches", color_img );
+
 		//Draw matches
-		for (unsigned int i = 0; i < matches.size(); i++) {
-			DMatch current_match = matches[i];
+		for (unsigned int i = 0; i < good_matches.size(); i++) {
+			DMatch current_match = good_matches[i];
 			//ROS_INFO("Matching last #%d to #%d. There are %d last keypoints and %d keypoints", current_match.trainIdx, current_match.queryIdx, last_keypoints.size(), keypoints.size());
 			if ((current_match.trainIdx < last_keypoints.size()) && (current_match.queryIdx < keypoints.size())) {
-				output_img = add_match_lines(output_img, last_keypoints[current_match.trainIdx], keypoints[current_match.queryIdx]);
+				output_img = add_match_lines(output_img, last_keypoints[current_match.queryIdx], keypoints[current_match.trainIdx]);
 			}
 		}
 
@@ -204,9 +233,9 @@ Mat compute_matches(Mat color_img) {
  }
 
  Mat add_match_lines(Mat img, KeyPoint last, KeyPoint current) {
- 	circle(img, last.pt, 4, Scalar(0.0, 0.0, 1.0, 0.0));
- 	circle(img, current.pt, 4, Scalar(1.0, 0.0, 0.0, 0.0));
- 	line(img, last.pt, current.pt, Scalar(0.0, 1.0, 0.0, 0.0));
+ 	circle(img, last.pt, 4, Scalar(0, 0, 255, 0.));
+ 	circle(img, current.pt, 4, Scalar(255, 0, 0, 0));
+ 	line(img, last.pt, current.pt, Scalar(0, 255, 0, 0));
  	return img;
  }
 
@@ -230,25 +259,30 @@ int main(int argc, char **argv)
     ROS_INFO("quadcopterVision::main.cpp::Test.");
 
     ROS_INFO("Started node.");
+
+    // DECLARE_TIMING(my_timer);
    	image_number = 0;
 
-   	time_t t = time(0);
-   	now = localtime(&t);
+   	if (save_images) {
+	   	time_t t = time(0);
+	   	now = localtime(&t);
 
-	//make directory for images, named ROS_WORKSPACE/[datetime]
-	std::stringstream imgDir;
-	imgDir << ROS_WORKSPACE 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
-	const std::string tmp = imgDir.str();
-	const char* imgDirectory = tmp.c_str();
+		//make directory for images, named ROS_WORKSPACE/[datetime]
+		std::stringstream imgDir;
+		imgDir << ROS_WORKSPACE 
+			<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
+		const std::string tmp = imgDir.str();
+		const char* imgDirectory = tmp.c_str();
 
-	int temp;
-	temp = umask(0);
-  	if ((temp = mkdir(imgDirectory, MY_MASK)) != 0) {
-    		fprintf(stderr, "ERROR %d: unable to mkdir; %s\n", errno, strerror(errno));
-  	}
+		
+		int temp;
+		temp = umask(0);
+	  	if ((temp = mkdir(imgDirectory, MY_MASK)) != 0) {
+	    		fprintf(stderr, "ERROR %d: unable to mkdir; %s\n", errno, strerror(errno));
+	  	}
 
-  	ROS_INFO("Created folder");
+	  	ROS_INFO("Created folder");
+	  }
 	
 
 
@@ -257,9 +291,9 @@ int main(int argc, char **argv)
 	* The first NodeHandle constructed will fully initialize this node, and the last
 	* NodeHandle destructed will close down the node.
 	*/
-        ros::NodeHandle nh;
+    ros::NodeHandle nh;
 	//Create an ImageTransport instance, initializing it with our NodeHandle.
-        image_transport::ImageTransport it(nh);
+    image_transport::ImageTransport it(nh);
 	//OpenCV HighGUI call to create a display window on start-up.
 	cv::namedWindow(WINDOW, CV_WINDOW_AUTOSIZE);
 	/**
@@ -269,7 +303,18 @@ int main(int argc, char **argv)
 	* subscribe() returns an image_transport::Subscriber object, that you must hold on to until you want to unsubscribe. 
 	* When the Subscriber object is destructed, it will automatically unsubscribe from the "camera/image_raw" base topic.
 	*/
-    image_transport::Subscriber sub = it.subscribe("ardrone/image_raw", 1, imageCallback);
+
+	image_transport::Subscriber sub;
+
+	if (webcam) {
+		ROS_INFO("Subscribing to webcam");
+		sub = it.subscribe("gscam/image_raw", 1, imageCallback);
+	}
+	else {
+		ROS_INFO("Subscribing to drone");
+    	sub = it.subscribe("ardrone/image_raw", 1, imageCallback);
+	}
+    
 	//OpenCV HighGUI call to destroy a display window on shut-down.
 	cv::destroyWindow(WINDOW);
 	/**

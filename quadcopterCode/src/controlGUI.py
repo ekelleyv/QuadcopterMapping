@@ -3,6 +3,7 @@
 import sys
 import gamepad
 import time
+import math
 try:
 	#PyGtk library import
  	import pygtk
@@ -18,7 +19,7 @@ except:
 import roslib; roslib.load_manifest('quadcopterCode')
 import rospy
 import os
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String, Empty, Float32
 from geometry_msgs.msg import Twist
 class controlGUI:
 
@@ -61,6 +62,9 @@ class controlGUI:
 		self.twist = Twist()
 		rospy.init_node("controlGUI")
 
+		self.y_est = 0
+		self.y_sub = rospy.Subscriber('localize/y_est', Float32, self.update_y)
+
 
 		
 
@@ -71,10 +75,12 @@ class controlGUI:
 		self.land_button = gtk.Button("Land")
 		self.reset_button = gtk.Button("Reset")
 		self.toggle_button = gtk.Button("Toggle Mode")
+		self.path_button = gtk.Button("Execute Path")
 		self.hbox_1.pack_start(self.takeoff_button)
 		self.hbox_1.pack_start(self.land_button)
 		self.hbox_1.pack_start(self.reset_button)
 		self.hbox_1.pack_start(self.toggle_button)
+		self.hbox_1.pack_start(self.path_button)
 
 		self.label = gtk.Label("Welcome to Control Tower")
 		self.vbox.pack_start(self.label)
@@ -123,6 +129,7 @@ class controlGUI:
 		self.land_button.connect("clicked", self.land)
 		self.reset_button.connect("clicked", self.reset)
 		self.toggle_button.connect("clicked", self.toggle)
+		self.path_button.connect("clicked", self.execute_path)
 
 		self.u1.connect("pressed", self.pitch_forward)
 		self.l1.connect("pressed", self.pitch_left)
@@ -322,6 +329,25 @@ class controlGUI:
 	def destroy_window(self,widget):
 		#MainWindow_destroy event
 		sys.exit(0)
+
+	def update_y(self, data):
+		self.y_est = data
+		print "Y is %f" % self.y_est 
+
+	def execute_path(self, widget):
+		self.takeoff(widget)
+		time.sleep(5)
+		# self.twist.linear.y = -.1
+		# self.twist_pub.publish(self.twist)
+		y_des = -2000.0
+		distance = math.fabs(self.y_est-y_des)
+		while(distance > 1000):
+			print("Distance is %f" % distance)
+			time.sleep(.001)
+		self.hover()
+		time.sleep(5)
+		self.land(widget)
+
 if __name__ == "__main__":
 	#start the class
 	cg = controlGUI()

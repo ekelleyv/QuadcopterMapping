@@ -2,6 +2,7 @@ QuadcopterMapping
 =================
 
 Mapping large objects using multiple autonomous ARDrones.
+-----------------
 
 Notes:
 	To kill ghost ros nodes and processes: 
@@ -39,4 +40,18 @@ Quadcopter Image Stream:
 		rosrun image_view image_view image:=ardrone/front/image_rect_color
 
 Running Tag Identification:
-	roslaunch ar_track_alvar ardrone_indiv_no_kinect.launch 
+	roslaunch ar_track_alvar ardrone_indiv_no_kinect.launch
+
+Resolving issues with Eigen
+	Added macros to Markers.h in ar_track_alvar
+
+Log
+==================
+
+-2/17/13
+	-- Figured out rectifying images
+	-- Researched using tf
+	-- Looked at kalman filter package
+-2/18/13
+	-- Debugging ar_track_alvar issues
+	-- Asked Tower for webcam

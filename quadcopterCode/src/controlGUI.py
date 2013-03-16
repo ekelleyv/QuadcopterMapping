@@ -21,18 +21,11 @@ import rospy
 import os
 from std_msgs.msg import String, Empty, Float32
 from geometry_msgs.msg import Twist
+
+
 class controlGUI:
 
-
 	def __init__(self):
-		#Set the path to Glade file, in the ros_glade ROS package
-		# str=roslib.packages.get_pkg_dir('quadcopterCode')+"/src/gui/quadcopterGUITest.glade"
-		# self.gladefile = str 
-		# #Initiate the Builder and point it to the glade file
-		# self.builder = gtk.Builder()
-		# self.builder.add_from_file(self.gladefile)
-		# #Connect event functions
-		# self.builder.connect_signals(self)
 		self.window = gtk.Window()
 		self.window.set_title("Quadcopter Control Tower")
 		self.window.set_default_size(300, 100)

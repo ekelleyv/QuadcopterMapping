@@ -26,23 +26,6 @@ class localize:
 		#Get delta t and update tm
 		delta_t = time.time() - self.time #Time in seconds
 		self.time = time.time()
-
-		# Getting heading from 3d magnetometer
-		# stackoverflow.com/questions/1055014
-		#NOT FUNCTIONAL YET
-		# heading = 0;
-		# if (data.magY > 0):
-		# 	heading = 90 - math.atan2(data.magX, data.magY)/math.pi
-		# elif (data.magY < 0):
-		# 	heading = 270 - math.atan2(data.magX, data.magY)/math.pi
-		# elif ((data.magY==0) and (data.magX < 0)):
-		# 	heading = 180
-		# elif ((data.magY==0) and (data.magX > 0)):
-		# 	heading = 0
-
-		# print "Mag %d %d %d" % (data.magX, data.magY, data.magZ)
-		# print "Heading: %f" % heading
-		# print "(%f, %f, %f, %f)" % (delta_t, data.vx, data.vy, data.vz)
 		self.particles.propogate(delta_t, data.vx, data.vy, data.vz, 0)
 		pos_est = self.particles.estimate()
 		self.x_est.publish(pos_est.x)

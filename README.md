@@ -5,21 +5,21 @@ Mapping large objects using multiple autonomous ARDrones.
 -----------------
 
 Notes:
-	To kill ghost ros nodes and processes: 
-		rosnode list: to get a list of all running nodes
-		rosnode kill [nameOfNode]
-		rosnode cleanup: if kill didn't kill it
+	-To kill ghost ros nodes and processes: 
+		-rosnode list: to get a list of all running nodes
+		-rosnode kill [nameOfNode]
+		-rosnode cleanup: if kill didn't kill it
 
 Architecture:
-	quadcopterVision
-		main.cpp
-			Subscribes to image stream and tracks points
-	quadcopterLocalization
-	quadcopterCode
+	-quadcopterVision
+		-main.cpp
+			-Subscribes to image stream and tracks points
+	-quadcopterLocalization
+	-quadcopterCode
 
 
 Run driver:
-	rosrun ardrone_autonomy ardrone_driver
+	-rosrun ardrone_autonomy ardrone_driver
 
 
 Webcam info:
@@ -29,7 +29,6 @@ Webcam info:
 	rosrun gscam gscam
 
 	Publishes to gscam/image_raw
-
 	Search for device in /dev/video* (should be 0)
 
 Quadcopter Image Stream:

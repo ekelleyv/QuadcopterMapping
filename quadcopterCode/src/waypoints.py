@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os, sys
 
 class waypoints:
 	def __init__(self, filename):
@@ -48,6 +49,7 @@ class waypoint:
 
 
 def main():
+	
 	test = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 	print "File Waypoints"
 	test.print_waypoints()

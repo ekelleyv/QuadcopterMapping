@@ -22,7 +22,7 @@ CONTROLLER_PERIOD = 100 #ms
 
 LINEAR_ERROR = 200 #mm
 
-ANGULAR_ERROR = (2*PI)/16.0 #ASSUMING RADIANS
+ANGULAR_ERROR = 5 #degrees
 
 LINEAR_MAX = .3 #Max tilt amount (unitless)
 
@@ -52,7 +52,19 @@ class DroneController(BasicCommands):
 		return sqrt((self.current_waypoint.x - self.x_est)**2 + (self.current_waypoint.z - self.z_est)**2 + (self.current_waypoint.z - self.z_est)**2)
 
 	def get_angle_diff(self):
+		des_angle = self.current_waypoint.theta
+		cur_angle = self.theta_est
+		
 		return 
+
+	def clamp_angle(self, angle):
+		if (angle > 180):
+			return angle - 360
+		elif (angle < -180):
+			return angle + 360
+		else:
+			return angle
+
 
 	def update_position(self, position):
 		#some magic happens and I update the position values in the controller

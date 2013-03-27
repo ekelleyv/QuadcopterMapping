@@ -38,6 +38,7 @@ class BasicCommands(object):
 		self.pubLand    = rospy.Publisher('/ardrone/land',Empty)
 		self.pubTakeoff = rospy.Publisher('/ardrone/takeoff',Empty)
 		self.pubReset   = rospy.Publisher('/ardrone/reset',Empty)
+		self.pubFlatTrim = rospy.Publisher('/ardrone/flattrim', Empty)
 		
 		# Allow the controller to publish to the /cmd_vel topic and thus control the drone
 		self.pubCommand = rospy.Publisher('/cmd_vel',Twist)
@@ -63,6 +64,10 @@ class BasicCommands(object):
 		# Send a landing message to the ardrone driver
 		# Note we send this in all states, landing can do no harm
 		self.pubLand.publish(Empty())
+
+	def SendFlatTrim(self):
+		if(self.status == DroneStatus.Landed):
+			self.pubFlatTrim.publish(Empty())
 
 	def SendEmergency(self):
 		# Send an emergency (or reset) message to the ardrone driver

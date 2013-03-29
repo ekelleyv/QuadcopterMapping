@@ -49,7 +49,7 @@ class waypoint:
 
 
 def main():
-	
+	#Tests
 	test = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 	print "File Waypoints"
 	test.print_waypoints()

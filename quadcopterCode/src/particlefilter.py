@@ -27,21 +27,63 @@ class particlefilter:
 		self.num_particles = num_particles
 		self.linear_noise = linear_noise
 		self.angular_noise = angular_noise
+		self.start_mag_heading = 0
+		self.start_gyr_heading = 0
 		self.particle_list = []
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
 
+
+
+	def set_heading(self, theta_est, magX, magY, magZ):
+		self.start_gyr_heading = theta_est
+		self.start_mag_heading = self.get_heading(magX, magY, magZ)
+
+
+
 	#Propogate particles based on accelerometer data and gyroscope-based theta
 	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_est):
+		norm_theta = self.clamp_angle(theta_est - self.start_gyr_heading)
 		for particle in self.particle_list:
-			particle.propogate(delta_t, x_acc, y_acc, z_acc, theta_est) #UPDATE VALUES
+			particle.propogate(delta_t, x_acc, y_acc, z_acc, norm_theta)
+
+
 
 	#Correct particles based on visual odometry and magnetometer readings
 	def correct(self, delta_t, x_vel, y_vel, z_est, magX, magY, magZ):
-		theta_est = 0 #FIGURE OUT HOW TO COMBINE 3D MAG READINGS INTO HEADING
+		theta_est = get_heading(magX, magY, magY)
 		x_delta = (x_vel*math.cos(theta_est) - y_vel*math.sin(theta_est))*delta_t
 		y_delta = (x_vel*math.sin(theta_est) - y_vel*math.cos(theta_est))*delta_t
-		self.weight(x_vel, y_vel, )
+
+
+
+	def get_heading(magX, magY, magZ):
+		# Direction (y>0) = 90 - [arcTAN(x/y)]*180/¹
+		# Direction (y<0) = 270 - [arcTAN(x/y)]*180/¹
+		# Direction (y=0, x<0) = 180.0
+		# Direction (y=0, x>0) = 0.0
+		heading = 0
+		if (magY > 0):
+			heading = 90 - math.atan(magX/magY)*180
+		elif (magY <0):
+			heading = 270 - math,atan(magX/magY)*180
+		elif ((y==0) and (x < 0)):
+			heading = 180
+		else:
+			heading = 0
+
+		return self.clamp_angle(heading - start_heading)
+
+
+
+	def clamp_angle(self, angle):
+		if (angle > 180):
+			return angle - 360
+		elif (angle < -180):
+			return angle + 360
+		else:
+			return angle
+
 
 	#Calculate the weight for particles
 	def weight(self):
@@ -94,9 +136,6 @@ class particle:
 		self.y_vel = y_acc*delta_t
 		self.z_vel = z_acc*delta_t
 
-		self.x += x_delta
-		self.y += y_delta
-		self.z = z_est
 		self.theta = theta_est
 
 	def to_string(self):

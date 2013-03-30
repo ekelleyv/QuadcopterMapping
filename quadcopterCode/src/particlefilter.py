@@ -56,12 +56,13 @@ class particlefilter:
 		y_delta = (x_vel*math.sin(theta_est) - y_vel*math.cos(theta_est))*delta_t
 
 
+	#Calculate the weight for particles
+	def weight(self):
+		pass
 
+
+	# http://www51.honeywell.com/aero/common/documents/myaerospacecatalog-documents/Defense_Brochures-documents/Magnetic__Literature_Application_notes-documents/AN203_Compass_Heading_Using_Magnetometers.pdf
 	def get_heading(magX, magY, magZ):
-		# Direction (y>0) = 90 - [arcTAN(x/y)]*180/¹
-		# Direction (y<0) = 270 - [arcTAN(x/y)]*180/¹
-		# Direction (y=0, x<0) = 180.0
-		# Direction (y=0, x>0) = 0.0
 		heading = 0
 		if (magY > 0):
 			heading = 90 - math.atan(magX/magY)*180
@@ -83,11 +84,6 @@ class particlefilter:
 			return angle + 360
 		else:
 			return angle
-
-
-	#Calculate the weight for particles
-	def weight(self):
-		pass
 
 
 	#Normalize all the weights such that they sum to 1

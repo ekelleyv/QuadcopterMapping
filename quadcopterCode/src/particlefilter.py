@@ -30,14 +30,9 @@ class particlefilter:
 		self.start_mag_heading = 0
 		self.start_gyr_heading = 0
 		self.particle_list = []
+		self.weight_dict = ()
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
-
-
-
-	def set_heading(self, theta_est, magX, magY, magZ):
-		self.start_gyr_heading = theta_est
-		self.start_mag_heading = self.get_heading(magX, magY, magZ)
 
 
 
@@ -58,8 +53,14 @@ class particlefilter:
 
 	#Calculate the weight for particles
 	def weight(self):
-		pass
+		self.weight_dict = dict()
+		for particle in self.particle_list:
+			
 
+	#Initialize values for both mag and gyr heading
+	def set_heading(self, theta_est, magX, magY, magZ):
+		self.start_gyr_heading = theta_est
+		self.start_mag_heading = self.get_heading(magX, magY, magZ)
 
 	# http://www51.honeywell.com/aero/common/documents/myaerospacecatalog-documents/Defense_Brochures-documents/Magnetic__Literature_Application_notes-documents/AN203_Compass_Heading_Using_Magnetometers.pdf
 	def get_heading(magX, magY, magZ):
@@ -92,8 +93,8 @@ class particlefilter:
 		for particle in self.particle_list:
 			total += particle.weight
 		for particle in self.particle_list:
-			if (total != 0)
-			particle.weight = particle.weight/total
+			if (total != 0):
+				particle.weight = particle.weight/total
 
 	
 	#Return an estimate of the pose
@@ -115,7 +116,6 @@ class particle:
 		self.y_vel = 0;
 		self.z_vel = 0;
 		self.theta = theta
-		self.weight = 1 #How should this be initialized?
 		self.parent = particlefilter
 
 	#Update the values of the particle based 

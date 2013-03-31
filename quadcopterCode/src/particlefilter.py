@@ -20,8 +20,10 @@ from walkerrandom import *
 # +angular.z: turn right
 
 class particlefilter:
-	def __init__(self, num_particles=1000, linear_noise=10, angular_noise=5):
-		self.filename = filename= "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') + ".txt" #in the format YYYYMMDDHHMMSS
+	def __init__(self, num_particles=1000, linear_noise=10, angular_noise=.5):
+		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
+		self.fp = open(self.filename + ".txt", "w")
+		self.fp_part = open(self.filename+"_part.txt")
 		self.num_particles = num_particles
 		self.linear_noise = linear_noise
 		self.angular_noise = angular_noise
@@ -32,9 +34,11 @@ class particlefilter:
 		self.weight_dict = dict()
 		self.first_propogate = True
 		self.first_correct = True
-		self.est = particle()
+		self.step = 0
+		self.est = particle(self)
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
+		self.fp.write("step, delta_t, x_acc, y_acc, z_acc, theta_est_gyr, norm_delta_theta, prev_theta, x_vel, y_vel, z_est, magX, magY, magZ, theta_est_mag, correct_x, correct_y\n")
 
 
 
@@ -43,11 +47,14 @@ class particlefilter:
 		if (self.first_propogate):
 			self.start_gyr_heading = theta_est
 
-		norm_delta_theta = self.clamp_angle(theta_est - self.prev_theta - self.start_gyr_heading)
+		norm_delta_theta = self.clamp_angle(theta_est - self.prev_theta - self.start_gyr_heading) #Should I be using self.est.theta instead of prev_theta?
+
 		for particle in self.particle_list:
 			particle.propogate(delta_t, x_acc, y_acc, z_acc, norm_delta_theta)
 
 		self.prev_theta = self.clamp_angle(self.prev_theta + norm_delta_theta)
+
+		self.fp.write("%d, %f, %f, %f, %f, %f, %f, %f" % (self.step, delta_t, x_acc, y_acc, z_acc, theta_est, norm_delta_theta, self.prev_theta))
 
 
 
@@ -56,7 +63,7 @@ class particlefilter:
 		if (self.first_correct):
 			self.start_mag_heading = self.get_heading(magX, magY, magZ)
 
-		theta_est = self.get_heading(magX, magY, magY)
+		theta_est = self.clamp_angle(self.get_heading(magX, magY, magY)-self.start_mag_heading)
 		x_delta = (x_vel*math.cos(theta_est) - y_vel*math.sin(theta_est))*delta_t
 		y_delta = (x_vel*math.sin(theta_est) - y_vel*math.cos(theta_est))*delta_t
 
@@ -77,6 +84,8 @@ class particlefilter:
 			self.particle_list.append(particle)
 
 		self.est = self.estimate()
+		self.fp.write("%f, %f, %f, %f, %f, %f, %f, %f, %f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, theta_est, new_x, new_y))
+		self.step += 1
 
 
 	#Calculate the weight for particles
@@ -84,12 +93,17 @@ class particlefilter:
 		self.weight_dict = dict()
 		weight_sum = 0
 		for particle in self.particle_list:
-			weight = 1 #Some function of difference between particle location and the estimated position based on sensors
+			#Figure out how to do weighting
+			x_diff = abs(x_est - particle.x)
+			y_diff = abs(y_est - particle.y)
+			z_diff = abs(z_est - particle.z)
+			theta_diff = abs(theta_est - particle.theta)
+			weight = 1/(x_diff + y_diff + z_diff + 1)
 			self.weight_dict[particle] = weight
 			weight_sum += weight
 
 		#Normalize the weights
-		for particle, weight in self.weight_dict:
+		for particle, weight in self.weight_dict.iteritems():
 			if (weight_sum != 0):
 				weight = weight/weight_sum
 
@@ -100,7 +114,7 @@ class particlefilter:
 		if (magY > 0):
 			heading = 90 - math.atan(magX/magY)*180
 		elif (magY <0):
-			heading = 270 - math,atan(magX/magY)*180
+			heading = 270 - math.atan(magX/magY)*180
 		elif ((y==0) and (x < 0)):
 			heading = 180
 		else:
@@ -122,14 +136,12 @@ class particlefilter:
 	#Return an estimate of the pose
 	#For now just use linear combination. Should we cluster instead?
 	def estimate(self):
-		est = particle()
-		for particle, weight in self.weight_dict:
-			est.x += particle.x*weight
-			est.y += particle.y*weight
-			est.z += particle.z*weight
-			est.theta += particle.z*weight
-
-		return est
+		self.est = particle(self)
+		for part, weight in self.weight_dict.iteritems():
+			self.est.x += part.x*weight
+			self.est.y += part.y*weight
+			self.est.z += part.z*weight
+			self.est.theta += part.z*weight
 
 
 	def print_particles(self):
@@ -147,9 +159,11 @@ class particle:
 		self.z_vel = 0;
 		self.theta = theta
 		self.parent = particlefilter
+		self.parent.fp_part.write("step, delta_t, x, y, z, x_vel, y_vel, z_vel, theta")
 
 	#Update the values of the particle based 
 	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_delta):
+		self.fp_part.write("%f, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
 		x_acc_noise = random.normalvariate(x_acc, self.parent.linear_noise)
 		y_acc_noise = random.normalvariate(y_acc, self.parent.linear_noise)
 		z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)
@@ -162,15 +176,15 @@ class particle:
 		self.z_vel = z_acc_noise*delta_t + self.z_vel
 
 
-		x_delta = (x_vel*math.cos(theta_est) - y_vel*math.sin(theta_est))*delta_t #Measurements in global coordinate frame
-		y_delta = (x_vel*math.sin(theta_est) - y_vel*math.cos(theta_est))*delta_t
+		x_delta = (self.x_vel*math.cos(self.theta) - self.y_vel*math.sin(self.theta))*delta_t #Measurements in global coordinate frame
+		y_delta = (self.x_vel*math.sin(self.theta) - self.y_vel*math.cos(self.theta))*delta_t
 		z_delta = self.z_vel*delta_t
 
 		self.x += x_delta
 		self.y += y_delta
 		self.z += z_delta
 
-		self.theta = self.parent.clamp_angle(self.theta + theta_delta)
+		self.theta = self.parent.clamp_angle(self.theta + theta_delta_noise)
 
 	def to_string(self):
 		return "(%.2f, %.2f, %.2f, %.4f)" % (self.x, self.y, self.z, self.theta)
@@ -178,16 +192,18 @@ class particle:
 
 def main():
 	pf = particlefilter(num_particles=10)
+
+	print "---------INIT---------"
+
 	pf.print_particles()
-	pf.set_heading(30, 24, 50, 10)
 	pf.propogate(.1, 10, 10, 0, 32)
 
-	print "------------------"
+	print "---------PROP---------"
 
 	pf.print_particles()
 	pf.correct(.1, 20, 20, 0, 24, 53, 10)
 
-	print "------------------"
+	print "---------CORRECT---------"
 
 	pf.print_particles()
 

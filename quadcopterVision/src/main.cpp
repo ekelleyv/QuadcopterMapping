@@ -54,7 +54,7 @@ using namespace cv;
 #define CLEAR_AVERAGE_TIMING(s) timeTally_##s = 0; countTally_##s = 0
 
 //Runtime options
-bool webcam = true;//true;
+bool webcam = false;//true;
 bool save_images = false;
 
 DECLARE_TIMING(my_timer);

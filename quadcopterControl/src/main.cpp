@@ -2,7 +2,7 @@
 #define _MAIN_CPP_
 /*
  main.cpp
- Testing processing of ardrone_autonomy services
+ Main control loop
  Sarah Tang and Edward Francis Kelley V
  Senior thesis, 2012-2013
  */
@@ -41,38 +41,43 @@ using namespace std;
 #include "ardrone_autonomy/Navdata.h"
 
 /*
- * AR.DRONE LIBRARY INCLUDES
+ * TUM_ARDRONE INCLUDES
  */
-/*#include <ardrone_tool/ardrone_version.h>
-#include <ardrone_tool/ardrone_tool.h>
-#include <ardrone_tool/ardrone_tool_configuration.h>  
-#include <ardrone_tool/Com/config_com.h>
-#include <ardrone_tool/UI/ardrone_input.h>
-#include <ardrone_tool/Video/video_com_stage.h>
-#include <ardrone_tool/Control/ardrone_control.h>
-#include <ardrone_tool/Navdata/ardrone_navdata_client.h>
-*/
+#include "tum_ardrone/filter_state.h"
+
+/*
+ * PROJECT INCLUDES
+ */
+#include "Drone.h"
+#include "functions.h"
+
 
 /*
  * DEFINITIONS
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
- //CHANGE TO GLOBAL VAR TODO
 #define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/bin/" 
 
 /*
  * GLOBAL VARIABLES
  */
+std::fstream settingsLog; //settings of the trial
 std::fstream navLog; //name of log file
+std::fstream predictLog; //log predicted things
+std::fstream controlLog; //log control commands
 long programStart; //time of program start
 struct tm *now; //beginning of programming
+Drone* droneP;
 
 /*
  FUNCTION DECLARATIONS
  */
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
+void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+void imgCB(const sensor_msgs::ImageConstPtr& msg);
+void cmdVelCB(const geometry_msgs::TwistConstPtr& msg);
 
 /*
  * FUNCTIONS
@@ -96,14 +101,39 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
         long currentTime = (end-programStart)/1000000.0;
 
 	//log all variables
-	navLog << "time= " << currentTime << " droneTime= " << msg->tm << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->state << " rot= " << msg->rotX << " " << msg->rotY << " " << msg->rotZ << " altd= " << msg->altd << " linearV= " << msg->vx << " " << msg->vy << " " << msg->vz << " " << " linearAccel " << msg->ax << " " << msg->ay << " " << msg->az << "\n";
+	navLog << "time= " << currentTime << " messageTime= " << msg->header.stamp << " droneTime= " << msg->tm << " lastStateTime= " << droneP->lastStateTime << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->state << " originalPosition= " << droneP->_x << " " << droneP->_y << " rot= " << msg->rotX << " " << msg->rotY << " " << msg->rotZ << " altd= " << msg->altd << " linearV= " << msg->vx << " " << msg->vy << " " << msg->vz << " " << " linearAccel= " << msg->ax << " " << msg->ay << " " << msg->az << " mag= " << msg->magX << " " << msg->magY << " " << msg->magZ << " pressure= " << msg->pressure << " temp= " << msg->temp << " windSpeed= " << msg->wind_speed << " windAngle= " << msg->wind_angle << " windCompAngle= " << msg->wind_comp_angle;
+
+	droneP->updateState(msg);
+	//droneP->printState();
+
+	navLog << " newPosition= " << droneP->_x << " " << droneP->_y << "\n";
+}
+
+/* 
+ * Callback function when predictdata is updated. Logs predictData in logfile. 
+ */
+void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
+	//get elapsed time
+   	long end = myclock();
+        long currentTime = (end-programStart)/1000000.0;
+
+	//log all variables
+	predictLog << "time= " << currentTime << " messageTime= " << msg->header.stamp << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->droneState << " pos = " << msg->x << " " << msg-> y << " " << msg->z << " linearV= " << msg->dx << " " << msg->dy << " " << msg->dz << " rot= " << msg->pitch << " " << msg->roll << " " << msg->yaw << " dyaw= " << msg->dyaw << " scale= " << msg->scale << " ptamState= " << msg->ptamState << " scaleAccuracy= " << msg->scaleAccuracy << "\n";
+}
+
+void cmdVelCB(const geometry_msgs::TwistConstPtr& msg) {
+	//get elapsed time
+   	long end = myclock();
+        long currentTime = (end-programStart)/1000000.0;
+
+	//log control 
+	controlLog << "time= " << currentTime << " messageTime = " << ros::Time::now() << " command= " << msg->linear.x << " " << msg->linear.y << " " << msg->linear.z << " " << msg->angular.x << " " << msg->angular.y << " " << msg->angular.z << "\n";
 }
 
 /* 
  * Callback function when new image is recieved in front-facing camera. Stored as .jpgs in folder.  
  */
-void imgCB(const sensor_msgs::ImageConstPtr& msg)
-{
+void imgCB(const sensor_msgs::ImageConstPtr& msg) {
 	//convert image from ros image to open CV image
 	sensor_msgs::CvBridge bridge;
 	IplImage* img;
@@ -123,17 +153,32 @@ void imgCB(const sensor_msgs::ImageConstPtr& msg)
 
 	//save .jpg with timestamped name in ROS_WORKSPACE/[programStart]
 	std::stringstream time;
-	time << ROS_WORKSPACE 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
-		<< "/" << currentTime << ".jpg";
+	time << ROS_WORKSPACE << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << "/" << currentTime << ".jpg";
 	const std::string tmp = time.str();
 	const char* timeStamp = tmp.c_str();
 
 	cvSaveImage(timeStamp, img);
 }
 
+/*
+ *MAIN
+ */
 int main(int argc, char** argv) {
-	//INITIALIZE LOGGING
+	/***INITALIZE ROS NODES***/
+	ROS_INFO("Initializing nodes...");
+	ros::init(argc, argv, "ardrone_control");
+	ros::NodeHandle n;
+
+	//maximums for control signal - read from command line, if none specified, use default
+	double maxAngle = -1;
+	double maxPsiDot = -1;
+	double maxZDot = -1;
+	processCmdLine(argc, argv, &maxAngle, &maxZDot, &maxPsiDot);
+
+std::cout << "Maximums: " << maxAngle << " " << maxPsiDot << " " << maxZDot << std::endl;
+
+	/***INITIALIZE LOGGING***/
+	ROS_INFO("Initializing logs...");
 	//get current time
    	programStart = myclock();
    	time_t t = time(0);
@@ -141,8 +186,7 @@ int main(int argc, char** argv) {
 
 	//make directory for images, named ROS_WORKSPACE/[datetime]
 	std::stringstream imgDir;
-	imgDir << ROS_WORKSPACE 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
+	imgDir << ROS_WORKSPACE << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
 	const std::string tmp = imgDir.str();
 	const char* imgDirectory = tmp.c_str();
 
@@ -152,100 +196,275 @@ int main(int argc, char** argv) {
     		fprintf(stderr, "ERROR %d: unable to mkdir; %s\n", errno, strerror(errno));
   	}
 
-	//make log file, named ROS_WORKSPACE/navLog_[datetime]
+	//make log files, named ROS_WORKSPACE/[type]Log_[datetime]
+	std::stringstream settingsStr;
+	settingsStr << ROS_WORKSPACE << "settings" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
+	const std::string tmps = settingsStr.str();
+	const char* settingsName = tmps.c_str();
+	settingsLog.open(settingsName, std::ios_base::out);
+
 	std::stringstream navLogStr;
-	navLogStr << ROS_WORKSPACE << "navLog" 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
-		<< ".txt";
+	navLogStr << ROS_WORKSPACE << "navLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
 	const std::string tmp2 = navLogStr.str();
 	const char* navLogName = tmp2.c_str();
-
 	navLog.open(navLogName, std::ios_base::out);
+
+	std::stringstream predictLogStr;
+	predictLogStr << ROS_WORKSPACE << "predictLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
+	const std::string tmp2_pr = predictLogStr.str();
+	const char* predictLogName = tmp2_pr.c_str();
+	predictLog.open(predictLogName, std::ios_base::out);
+
+	std::stringstream controlLogStr;
+	controlLogStr << ROS_WORKSPACE << "controlLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
+	const std::string tmp3_pr = controlLogStr.str();
+	const char* controlLogName = tmp3_pr.c_str();
+	controlLog.open(controlLogName, std::ios_base::out);
 
 	std_msgs::Empty empty;
 	std_srvs::Empty emptyCall;
 
-	//INITALIZE ROS NODES
-	ros::init(argc, argv, "test_ardrone_autonomy");
-	ros::NodeHandle n;
-
+	/***SET UP SERVICES***/
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
 	image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //forward camera
-	image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
+	//image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
 
 	//service call to toggle camera
 	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/togglecam");
 
 	//subscribe to navdata
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
+	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
 
+	ROS_INFO("Initializing openCV...");
 	//make openCV windows
 	cvNamedWindow("view");
   	cvStartWindowThread();
 
+	ROS_INFO("Initialize cmd_vel..");
+	//initialize cmd_vel
+	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
+ROS_INFO("OK1");
+	//DON'T FORGET TO PUT THIS CHECK BACK
+	while (cmd_vel.getNumSubscribers() < 1) { ;}
+ROS_INFO("OK2");
+	geometry_msgs::Twist velocity;
+ROS_INFO("OK3");
+	velocity.linear.x = 0;
+	velocity.linear.y = 0;
+	velocity.linear.z = 0;	
+	velocity.angular.x = 0;
+	velocity.angular.y = 0;
+	velocity.angular.z = 0;
+ROS_INFO("OK4");
+	cmd_vel.publish(velocity);
+ROS_INFO("OK5");
+	ros::spinOnce(); //reset velocity
+	//ros::Subscriber cmdvel_sub = n.subscribe("/cmd_vel", 1000, cmdVelCB);
+ROS_INFO("OK6");
+	/***INITIALIZE DRONE STUFF***/
+	ROS_INFO("Initialize drone stuff...");
+	//initialize desired waypoints
+	int numPoints = 1;
+	int currentWaypoint = 0;
+	//assume units of mm
+	double* xDes = new double[numPoints];
+	double* yDes = new double[numPoints];
+	double* aDes = new double[numPoints];
+	double* tDes = new double[numPoints];	
+
+	for (int i = 0; i < numPoints; i++) {
+		xDes[i] = 0;
+		yDes[i] = 0;
+		tDes[i] = 0;
+		aDes[i] = 0;
+	}
+
+	xDes[0] = -500;
+
+
+	//log waypoints
+	settingsLog << " NumberWaypoints= " << numPoints << " xDes= ";
+	for (int i = 0; i < numPoints; i++) {
+		settingsLog << xDes[i] << " ";
+	} 
+	settingsLog << "yDes= ";
+	for (int i = 0; i < numPoints; i++) {
+		settingsLog << yDes[i] << " ";
+	}
+	settingsLog << " altDes= ";
+	for (int i = 0; i < numPoints; i++) {
+		settingsLog << aDes[i] << " ";
+	}
+	settingsLog << " psiDes= ";
+	for (int i = 0; i < numPoints; i++) {
+		settingsLog << tDes[i] << " ";
+	}
+	settingsLog << "\n";
+
+/*for (int i = 0; i < numPoints; i++) {
+		std::cout << "(" << xDes[i] << ", " << yDes[i] << "), " << aDes[i] << " " << tDes[i] << "\n";
+	}*/
+
+	//initalize drone
+	droneP = new Drone(0.0, 0.0, 0.0);
+	//droneP = new Drone(0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 1.5, 2.5, 3.5, 1.8, 2.8, 3.8, 1.9, 2.9, 3.9);
+	droneP->setMaximums(maxAngle, maxZDot, maxPsiDot);
+
+	//log control gains
+	settingsLog << "Controlgains: " << "xPID= " << droneP->_droneController->_kpX << " " << droneP->_droneController->_kdX << " " << droneP->_droneController->_kiX << " yPID= " << droneP->_droneController->_kpY << " " << droneP->_droneController->_kdY << " " << droneP->_droneController->_kiY << " yawPID= " << droneP->_droneController->_kpT << " " << droneP->_droneController->_kdT << " " << droneP->_droneController->_kiT << " zPID= " << droneP->_droneController->_kpA << " " << droneP->_droneController->_kdA << " " << droneP->_droneController->_kiA << "\n";
+
+	//log maximums
+	settingsLog << "MaxAngle= " << maxAngle << "MaxZDot= " << maxZDot << "MaxPsiDot= " << maxPsiDot << "\n";
+std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << " " << droneP->_maxZDot << std::endl;
+
+//test drone library
+droneP->printState();
+/*droneP->calculateControl(xDes[0], yDes[0], aDes[0], tDes[0]);
+droneP->printState();
+droneP->translateControl();
+droneP->printState();*/
+
+	/***AR.DRONE TAKEOFF***/
 	//command take off
 	ROS_INFO("Taking off..");	
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
 	while (takeoff.getNumSubscribers() < 1) { ;}
 	takeoff.publish(empty);
 	ros::spinOnce();
-
-	//initialize cmd_vel
-	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("\cmd_vel", 1000);
-	while (cmd_vel.getNumSubscribers() < 1) { ;}
-	geometry_msgs::Twist velocity;
-	velocity.linear.x = 0;
-	velocity.linear.y = 0;
-	velocity.linear.z = 0;	
-	velocity.angular.x = 0;
-	velocity.angular.y = 0;
-	velocity.angular.z = 0.0;
-	cmd_vel.publish(velocity);
-	ros::spinOnce(); //reset velocity
+	ros::Duration(5).sleep(); // sleep to allow the drone to take off
 
 	int32_t controlFlag = 0;
 
-	//hover for 15 seconds
+
+	/***BEGIN CONTROL LOOP***/
 	bool cam = false;
+	bool hover = false;
+	ros::Time hoverBegin;
+
+	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
+	double angleThres = 2;
+	double distThres = 20; 
+	double zThres = 5;
+	double hoverTime = 5;
+	settingsLog << "hoverTime= " << hoverTime << " angleThreshold= " << angleThres << " distThreshold= " << distThres << " zThreshold= " << zThres << "\n";
+
+	ROS_INFO("Begin control loop...");
+	ros::Rate loop_rate(200); //200Hz loop rate
 	while (ros::ok()) {
-		//process ros messages
-		ros::spinOnce();
+	//for (int k = 0; k < 10; k++) {
+		//create control signal with default as hover
+		geometry_msgs::Twist velocity;
+		velocity.linear.x = 0.0;
+		velocity.linear.y = 0.0;
+		velocity.linear.z = 0.0;	
+		velocity.angular.x = 0.0;
+		velocity.angular.y = 0.0;
+		velocity.angular.z = 0.0;
+
+		//control mode
+		//check each individually, but only move to the next waypoint when everything is fulfilled
+/*std::cout << "ErrorVals= " << (droneP->_x - xDes[currentWaypoint]) << " " << (droneP->_y - yDes[currentWaypoint]) << " " << droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint]) << " " << (droneP->_alt - aDes[currentWaypoint]) << std::endl;*/
+/*			if ((droneP->_x - xDes[currentWaypoint]) > distThres) {
+				ROS_INFO("x not there yet..");
+			}
+			if ((droneP->_y - yDes[currentWaypoint]) > distThres) {
+				ROS_INFO("y not there yet..");
+			}
+			if (droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint]) > angleThres) {
+				ROS_INFO("angle not there yet..");
+			}
+			if ((droneP->_alt - aDes[currentWaypoint]) > distThres) {
+				ROS_INFO("alt not there yet..");
+			}
+*/
+
+/*		if ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		(abs(droneP->_y - yDes[currentWaypoint]) > distThres) ||
+		(abs(droneP->_alt - aDes[currentWaypoint]) > distThres) ||
+		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) {*/
+		if ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) && (hover == false)) {
+			//calculate the control signal
+			//ROS_INFO("Calculating control signal...");
+			droneP->calculateControl(xDes[currentWaypoint], yDes[currentWaypoint], aDes[currentWaypoint], tDes[currentWaypoint]);
 
 		//get elapsed time
    		long end = myclock();
         	long currentTime = (end-programStart)/1000000.0;
 
-		if (currentTime > 8) { break;}
-		if (currentTime > 4) {
-			ROS_INFO("Sending command to turn...");
+		//log control 
+		controlLog << "time= " << currentTime << " Waypoint= " << currentWaypoint << " rawErrorVals(x,y,alt,psi)= " << droneP->_droneController->_lastXErr << " " << droneP->_droneController->_lastYErr << " " << droneP->_droneController->_lastAErr << " " << droneP->_droneController->_lastTErr << " rawIntegralErrVals(x,y,alt,psi)= " << droneP->_droneController->_totalXErr << " " << droneP->_droneController->_totalYErr << " " << droneP->_droneController->_totalAErr << " " << droneP->_droneController->_totalTErr << " rawControlSignal= " << droneP->_droneController->_thetaDes << " " << droneP->_droneController->_phiDes << " " << droneP->_droneController->_psiDotDes << " " << droneP->_droneController->_zDotDes;
+
+			droneP->translateControl();
+
+			//log control 
+		controlLog << " translatedControlSignal= " << droneP->_droneController->_thetaDes << " " << droneP->_droneController->_phiDes << " " << droneP->_droneController->_psiDotDes << " " << droneP->_droneController->_zDotDes;
+
+			if (abs(droneP->_x - xDes[currentWaypoint]) > distThres) {
+				velocity.linear.x = droneP->_droneController->_thetaDes;
+			}
+	/*		if (abs(droneP->_y - yDes[currentWaypoint]) > distThres) {
+				velocity.linear.y = droneP->_droneController->_phiDes;
+			}
+			if (abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres) {
+				velocity.angular.z = droneP->_droneController->_psiDotDes;
+			}*/
+		/*	if (abs(droneP->_alt - aDes[currentWaypoint]) > distThres) {
+				velocity.linear.z = droneP->_droneController->_zDotDes;
+			}*/
+		}
+
+		//if already at goal, begin to hover
+		else if (hover == false) {
+			ROS_INFO("Begin hovering at waypoint %d...", currentWaypoint);
+			hoverBegin = ros::Time::now();
+			hover = true;
+
+			droneP->_droneController->resetController();
 			velocity.linear.x = 0;
-			velocity.linear.y = -0.2;
+			velocity.linear.y = 0;
 			velocity.linear.z = 0;	
 			velocity.angular.x = 0;
 			velocity.angular.y = 0;
 			velocity.angular.z = 0;
-
-			cmd_vel.publish(velocity);
-			ros::spinOnce();
-			
-	  		//ardrone_at_set_progress_cmd(controlFlag, 0.0, 0.0, 0.0, 0.2);
-			//ardrone_tool_set_progressive_cmd(controlFlag, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 		}
-		//command to toggle camera
-		/*else if (currentTime > 5 && cam == false) {
-			if (toggleCam.call(emptyCall)) { ROS_INFO("Toggling camera");}
-			else { ROS_ERROR("Failed to call toggle camera service");}
 
-			cam = true;
-		}*/
+		//if already hovering, keep hovering for 2 seconds
+		else if ((hover == true) && ((ros::Time::now()-hoverBegin).toSec() < hoverTime)) {
+			velocity.linear.x = 0;
+			velocity.linear.y = 0;
+			velocity.linear.z = 0;	
+			velocity.angular.x = 0;
+			velocity.angular.y = 0;
+			velocity.angular.z = 0;
+		}
+
+		//if done hovering, move to next goal, or land if last goal is reached
+		else {
+			hover = false;
+			currentWaypoint = currentWaypoint + 1;
+			ROS_INFO("Moving to waypoint %d...", currentWaypoint);
+			if (currentWaypoint >= numPoints) {
+				ROS_INFO("All waypoints visited!");
+				break;
+			}
+		}
+
+		//get elapsed time
+   		long end = myclock();
+        	long currentTime = (end-programStart)/1000000.0;
+
+		controlLog << " sentMessageTime= " << ros::Time::now() << " sentLinearCommand= " << velocity.linear.x << " " << velocity.linear.y << " " << velocity.linear.z << " " << " sentAngularCommand= " << velocity.angular.x << " " << velocity.angular.y << " " << velocity.angular.z << "\n";
+
+		//send appropriate control signal
+		cmd_vel.publish(velocity);
+std::cout << "THETADES= " << velocity.linear.x << std::endl;
+		ros::spinOnce();
+
 	}
 
 	//land the quad
-//	ROS_INFO("Sending command to stop turning...");
-	//ardrone_tool_set_progressive_cmd(controlFlag, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-//	  ardrone_at_set_progress_cmd(input_state.pcmd.flag, input_state.pcmd.phi, input_state.pcmd.theta, input_state.pcmd.gaz, input_state.pcmd.yaw);
-
 	ROS_INFO("Landing..");
 	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
 	while (land.getNumSubscribers() < 1) { ;}
@@ -255,6 +474,14 @@ int main(int argc, char** argv) {
 	//exit cleanly
 	cvDestroyWindow("view");
 	navLog.close();
+
+	//free memory
+	droneP->~Drone();
+	delete droneP;
+	delete [] xDes;
+	delete [] yDes;
+	delete [] aDes;
+	delete [] tDes; 
 
 	return 0;
 

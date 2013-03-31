@@ -2,7 +2,7 @@
 #define _MAIN_CPP_
 /*
  main.cpp
- Testing processing of ardrone_autonomy services
+ Main control loop
  Sarah Tang and Edward Francis Kelley V
  Senior thesis, 2012-2013
  */
@@ -33,6 +33,7 @@ using namespace std;
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <cv_bridge/CvBridge.h>
+#include <geometry_msgs/Twist.h>
 
 /*
  * ARDRONE_AUTONOMY INCLUDES
@@ -40,17 +41,28 @@ using namespace std;
 #include "ardrone_autonomy/Navdata.h"
 
 /*
+ * TUM_ARDRONE INCLUDES
+ */
+#include "tum_ardrone/filter_state.h"
+
+/*
+ * PROJECT INCLUDES
+ */
+#include "Drone.h"
+
+
+/*
  * DEFINITIONS
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
- //CHANGE TO GLOBAL VAR TODO
-#define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterCode/bin/" 
+#define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/bin/" 
 
 /*
  * GLOBAL VARIABLES
  */
 std::fstream navLog; //name of log file
+std::fstream predictLog; //log predicted things
 long programStart; //time of program start
 struct tm *now; //beginning of programming
 
@@ -59,6 +71,8 @@ struct tm *now; //beginning of programming
  */
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
+void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+void imgCB(const sensor_msgs::ImageConstPtr& msg);
 
 /*
  * FUNCTIONS
@@ -86,10 +100,21 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 }
 
 /* 
+ * Callback function when predictdata is updated. Logs predictData in logfile. 
+ */
+void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
+	//get elapsed time
+   	long end = myclock();
+        long currentTime = (end-programStart)/1000000.0;
+
+	//log all variables
+	predictLog << "time= " << currentTime << " messageTime= " << msg->header.stamp << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->droneState << " pos = " << msg->x << " " << msg-> y << " " << msg->z << " linearV= " << msg->dx << " " << msg->dy << " " << msg->dz << " rot= " << msg->pitch << " " << msg->roll << " " << msg->yaw << " dyaw= " << msg->dyaw << " scale= " << msg->scale << " ptamState= " << msg->ptamState << " scaleAccuracy= " << msg->scaleAccuracy << "\n";
+}
+
+/* 
  * Callback function when new image is recieved in front-facing camera. Stored as .jpgs in folder.  
  */
-void imgCB(const sensor_msgs::ImageConstPtr& msg)
-{
+void imgCB(const sensor_msgs::ImageConstPtr& msg) {
 	//convert image from ros image to open CV image
 	sensor_msgs::CvBridge bridge;
 	IplImage* img;
@@ -109,15 +134,16 @@ void imgCB(const sensor_msgs::ImageConstPtr& msg)
 
 	//save .jpg with timestamped name in ROS_WORKSPACE/[programStart]
 	std::stringstream time;
-	time << ROS_WORKSPACE 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
-		<< "/" << currentTime << ".jpg";
+	time << ROS_WORKSPACE << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << "/" << currentTime << ".jpg";
 	const std::string tmp = time.str();
 	const char* timeStamp = tmp.c_str();
 
 	cvSaveImage(timeStamp, img);
 }
 
+/*
+ *MAIN
+ */
 int main(int argc, char** argv) {
 	//INITIALIZE LOGGING
 	//get current time
@@ -127,8 +153,7 @@ int main(int argc, char** argv) {
 
 	//make directory for images, named ROS_WORKSPACE/[datetime]
 	std::stringstream imgDir;
-	imgDir << ROS_WORKSPACE 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
+	imgDir << ROS_WORKSPACE << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min;
 	const std::string tmp = imgDir.str();
 	const char* imgDirectory = tmp.c_str();
 
@@ -140,13 +165,16 @@ int main(int argc, char** argv) {
 
 	//make log file, named ROS_WORKSPACE/navLog_[datetime]
 	std::stringstream navLogStr;
-	navLogStr << ROS_WORKSPACE << "navLog" 
-		<< now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min 
-		<< ".txt";
+	navLogStr << ROS_WORKSPACE << "navLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
 	const std::string tmp2 = navLogStr.str();
 	const char* navLogName = tmp2.c_str();
-
 	navLog.open(navLogName, std::ios_base::out);
+
+	std::stringstream predictLogStr;
+	predictLogStr << ROS_WORKSPACE << "predictLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
+	const std::string tmp2_pr = predictLogStr.str();
+	const char* predictLogName = tmp2_pr.c_str();
+	predictLog.open(predictLogName, std::ios_base::out);
 
 	std_msgs::Empty empty;
 	std_srvs::Empty emptyCall;
@@ -158,27 +186,44 @@ int main(int argc, char** argv) {
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
 	image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //forward camera
-	image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
+	//image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
 
 	//service call to toggle camera
 	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/togglecam");
 
 	//subscribe to navdata
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
+	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
 
 	//make openCV windows
 	cvNamedWindow("view");
   	cvStartWindowThread();
 
+	//initialize cmd_vel
+	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("\cmd_vel", 1000);
+	while (cmd_vel.getNumSubscribers() < 1) { ;}
+	geometry_msgs::Twist velocity;
+	velocity.linear.x = 0;
+	velocity.linear.y = 0;
+	velocity.linear.z = 0;	
+	velocity.angular.x = 0;
+	velocity.angular.y = 0;
+	velocity.angular.z = 0;
+	cmd_vel.publish(velocity);
+	ros::spinOnce(); //reset velocity
+
 	//command take off
 	ROS_INFO("Taking off..");	
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
 	while (takeoff.getNumSubscribers() < 1) { ;}
-	takeoff.publish(empty);
-	ros::spinOnce();
+	//takeoff.publish(empty);
+	//ros::spinOnce();
 
-	//hover for 15 seconds
+	int32_t controlFlag = 0;
+
+	//hover
 	bool cam = false;
+	bool ind = false;
 	while (ros::ok()) {
 		//process ros messages
 		ros::spinOnce();
@@ -187,7 +232,26 @@ int main(int argc, char** argv) {
    		long end = myclock();
         	long currentTime = (end-programStart)/1000000.0;
 
-		if (currentTime > 10) { break;}
+		if (currentTime > 30) { break;}
+		if ((currentTime > 4) && (ind == false)) {
+			ROS_INFO("Sending command to turn...");
+			geometry_msgs::Twist velocity;
+			velocity.linear.x = -0.5;
+			velocity.linear.y = 0.0;
+			velocity.linear.z = 0.0;	
+			velocity.angular.x = 0.0;
+			velocity.angular.y = 0.0;
+			velocity.angular.z = 0.0;
+
+			cmd_vel.publish(velocity);
+			ros::spinOnce();
+
+			ind = true;
+			
+	  		//ardrone_at_set_progress_cmd(controlFlag, 0.0, 0.0, 0.0, 0.2);
+			//ardrone_tool_set_progressive_cmd(controlFlag, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+		}
+		//command to toggle camera
 		/*else if (currentTime > 5 && cam == false) {
 			if (toggleCam.call(emptyCall)) { ROS_INFO("Toggling camera");}
 			else { ROS_ERROR("Failed to call toggle camera service");}
@@ -197,6 +261,10 @@ int main(int argc, char** argv) {
 	}
 
 	//land the quad
+//	ROS_INFO("Sending command to stop turning...");
+	//ardrone_tool_set_progressive_cmd(controlFlag, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+//	  ardrone_at_set_progress_cmd(input_state.pcmd.flag, input_state.pcmd.phi, input_state.pcmd.theta, input_state.pcmd.gaz, input_state.pcmd.yaw);
+
 	ROS_INFO("Landing..");
 	ros::Publisher land = n.advertise<std_msgs::Empty>("/ardrone/land", 1000);
 	while (land.getNumSubscribers() < 1) { ;}

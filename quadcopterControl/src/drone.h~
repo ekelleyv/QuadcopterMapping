@@ -1,0 +1,40 @@
+#ifndef _DRONE_H
+#define _DRONE_H
+/*
+ drone.h
+ Data type for the drone
+ Sarah Tang and Edward Francis Kelley V
+ Senior thesis, 2012-2013
+ */
+
+class ARDrone {
+
+public: 
+	//CONSTRUCTORS
+	ARDrone(int initalx, int intialy, int initialz);
+
+	//DESTRUCTOR
+	~ARDrone();
+
+	//PUBLIC FUNCTIONS
+
+private:
+	//drone state
+	float x;
+	float y;
+	float alt;
+	float u;
+	float v;
+	float w;
+	float udot;
+	float vdot;
+	float wdot;
+	float theta;
+	float phi;
+	float psi;
+	
+	controller droneController
+
+
+
+#endif

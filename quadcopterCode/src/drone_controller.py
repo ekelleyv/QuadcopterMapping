@@ -38,7 +38,7 @@ class DroneController():
 	def __init__(self):
 		self.cmd = BasicCommands()
 		self.localize = localize()
-		self.pose = particle()
+		self.pose = particle(self)
 		self.start = True
 
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
@@ -85,11 +85,11 @@ class DroneController():
 		#Define tilt as being within - and + MAX values
 
 		#SetCommand
-		if (self.start):
-			self.cmd.SendTakeoff()
-			self.start = false
-		elif (self.status == DroneStatus.Flying or self.status == DroneStatus.GotoHover or self.status == DroneStatus.Hovering):
-			self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=0,z_velocity=0)
+		# if (self.start):
+		# 	self.cmd.SendTakeoff()
+		# 	self.start = false
+		# elif (self.status == DroneStatus.Flying or self.status == DroneStatus.GotoHover or self.status == DroneStatus.Hovering):
+		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=0,z_velocity=0)
 
 def main():
 	rospy.init_node("controller")

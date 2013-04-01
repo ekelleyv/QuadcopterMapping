@@ -23,7 +23,7 @@ class particlefilter:
 	def __init__(self, num_particles=1000, linear_noise=10, angular_noise=.5):
 		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
-		self.fp_part = open(self.filename+"_part.txt")
+		self.fp_part = open(self.filename+"_part.txt", "w")
 		self.num_particles = num_particles
 		self.linear_noise = linear_noise
 		self.angular_noise = angular_noise
@@ -38,7 +38,8 @@ class particlefilter:
 		self.est = particle(self)
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
-		self.fp.write("step, delta_t, x_acc, y_acc, z_acc, theta_est_gyr, norm_delta_theta, prev_theta, x_vel, y_vel, z_est, magX, magY, magZ, theta_est_mag, correct_x, correct_y\n")
+		self.fp.write("step,delta_t,x_acc,y_acc,z_acc,theta_est_gyr,norm_delta_theta,prev_theta,x_vel,y_vel,z_est,magX,magY,magZ,theta_est_mag,correct_x,correct_y\n")
+		self.fp_part.write("step,delta_t,x,y,z,x_vel,y_vel,z_vel,theta\n")
 
 
 
@@ -54,7 +55,7 @@ class particlefilter:
 
 		self.prev_theta = self.clamp_angle(self.prev_theta + norm_delta_theta)
 
-		self.fp.write("%d, %f, %f, %f, %f, %f, %f, %f" % (self.step, delta_t, x_acc, y_acc, z_acc, theta_est, norm_delta_theta, self.prev_theta))
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc, theta_est, norm_delta_theta, self.prev_theta))
 
 
 
@@ -83,7 +84,6 @@ class particlefilter:
 			particle = wrand.random()
 			self.particle_list.append(particle)
 
-		self.est = self.estimate()
 		self.fp.write("%f, %f, %f, %f, %f, %f, %f, %f, %f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, theta_est, new_x, new_y))
 		self.step += 1
 
@@ -113,9 +113,9 @@ class particlefilter:
 		heading = 0
 		if (magY > 0):
 			heading = 90 - math.atan(magX/magY)*180
-		elif (magY <0):
+		elif (magY < 0):
 			heading = 270 - math.atan(magX/magY)*180
-		elif ((y==0) and (x < 0)):
+		elif ((magY==0) and (magX < 0)):
 			heading = 180
 		else:
 			heading = 0
@@ -159,11 +159,11 @@ class particle:
 		self.z_vel = 0;
 		self.theta = theta
 		self.parent = particlefilter
-		self.parent.fp_part.write("step, delta_t, x, y, z, x_vel, y_vel, z_vel, theta")
 
 	#Update the values of the particle based 
 	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_delta):
-		self.fp_part.write("%f, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
+		if (self.parent.step%100 == 0):
+			self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
 		x_acc_noise = random.normalvariate(x_acc, self.parent.linear_noise)
 		y_acc_noise = random.normalvariate(y_acc, self.parent.linear_noise)
 		z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)

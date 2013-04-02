@@ -96,7 +96,8 @@ class particlefilter:
 		self.weight_dict = dict()
 		weight_sum = 0
 		for particle in self.particle_list:
-			#Figure out how to do weighting
+			#THIS WEIGHTING IS JUST A PLACEHOLDER
+			#REPLACE WITH SENSOR MODEL DATA
 			x_diff = abs(x_est - particle.x)
 			y_diff = abs(y_est - particle.y)
 			z_diff = abs(z_est - particle.z)

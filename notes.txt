@@ -3,3 +3,5 @@ Questions:
 	Is the accelerometer in g's or m/s/s? How do I deal with g's?
 
 Range of ultrasound is ~6 meters
+
+For some reason I am getting + an - readings from the converted magnetometer

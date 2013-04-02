@@ -51,12 +51,15 @@ class particlefilter:
 		norm_delta_theta = self.clamp_angle(theta_est - self.prev_theta - self.start_gyr_heading) #Should I be using self.est.theta instead of prev_theta?
 
 		for particle in self.particle_list:
-			particle.propogate(delta_t, x_acc, y_acc, z_acc, norm_delta_theta)
+			particle.propogate(delta_t, convert_g(x_acc), convert_g(y_acc), convert_g(z_acc), norm_delta_theta)
 
 		self.prev_theta = self.clamp_angle(self.prev_theta + norm_delta_theta)
 
 		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc, theta_est, norm_delta_theta, self.prev_theta))
 
+	def convert_g(acc):
+		rate = 9806.65
+		return acc*rate
 
 
 	#Correct particles based on visual odometry and magnetometer readings

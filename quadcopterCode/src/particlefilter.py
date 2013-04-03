@@ -45,8 +45,11 @@ class particlefilter:
 
 	#Propogate particles based on accelerometer data and gyroscope-based theta
 	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_est):
+		#Dont need to zero gyr
 		if (self.first_propogate):
 			self.start_gyr_heading = theta_est
+
+		#PROPOGATE USING THE AVERAGE OF EST.THETA AND THETA_EST-PREV_THETA
 
 		norm_delta_theta = self.clamp_angle(theta_est - self.prev_theta - self.start_gyr_heading) #Should I be using self.est.theta instead of prev_theta?
 
@@ -69,7 +72,7 @@ class particlefilter:
 
 		theta_est = self.clamp_angle(self.get_heading(magX, magY, magY)-self.start_mag_heading)
 		x_delta = (x_vel*math.cos(theta_est) - y_vel*math.sin(theta_est))*delta_t
-		y_delta = (x_vel*math.sin(theta_est) - y_vel*math.cos(theta_est))*delta_t
+		y_delta = (x_vel*math.sin(theta_est) + y_vel*math.cos(theta_est))*delta_t
 
 		new_x = x_delta + self.est.x
 		new_y = y_delta + self.est.y
@@ -114,16 +117,8 @@ class particlefilter:
 
 	# http://www51.honeywell.com/aero/common/documents/myaerospacecatalog-documents/Defense_Brochures-documents/Magnetic__Literature_Application_notes-documents/AN203_Compass_Heading_Using_Magnetometers.pdf
 	def get_heading(self, magX, magY, magZ):
-		heading = 0
-		if (magY > 0):
-			heading = 90 - math.atan(magX/magY)*180
-		elif (magY < 0):
-			heading = 270 - math.atan(magX/magY)*180
-		elif ((magY==0) and (magX < 0)):
-			heading = 180
-		else:
-			heading = 0
-
+		
+		heading = (math.atan2(magX, magY)/math.pi)*180
 		return self.clamp_angle(heading - self.start_mag_heading)
 
 
@@ -181,7 +176,7 @@ class particle:
 
 
 		x_delta = (self.x_vel*math.cos(self.theta) - self.y_vel*math.sin(self.theta))*delta_t #Measurements in global coordinate frame
-		y_delta = (self.x_vel*math.sin(self.theta) - self.y_vel*math.cos(self.theta))*delta_t
+		y_delta = (self.x_vel*math.sin(self.theta) + self.y_vel*math.cos(self.theta))*delta_t
 		z_delta = self.z_vel*delta_t
 
 		self.x += x_delta

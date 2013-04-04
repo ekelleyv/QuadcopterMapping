@@ -10,6 +10,7 @@ import tf
 from geometry_msgs.msg import Twist  	 # for sending commands to the drone
 from std_msgs.msg import Empty       	 # for land/takeoff/emergency
 from ardrone_autonomy.msg import Navdata # for receiving navdata feedback
+from visualization_msgs.msg import *
 
 # An enumeration of Drone Statuses
 from drone_status import DroneStatus
@@ -34,16 +35,21 @@ LINEAR_GAIN = .1 # Pick good values
 ANGULAR_GAIN = .1 #
 
 
+
+
 class DroneController():
 	def __init__(self):
 		self.cmd = BasicCommands()
 		self.localize = localize()
 		self.pose = particle(self)
 		self.start = True
+		self.est_pub = rospy.Publisher('pf_marker', Marker)
 
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 
 		self.current_waypoint = self.waypoints.get_waypoint();
+
+		self.est_marker = Marker()
 
 		# self.controller_timer = rospy.Timer(rospy.Duration(CONTROLLER_PERIOD/1000.0),self.update_command)
 
@@ -66,10 +72,14 @@ class DroneController():
 		# spin() simply keeps python from exiting until this node is stopped
 		rospy.spin()
 
-	def update_command(self, data):
+	def update_markers(self):
+		self.est_marker = self.localize.get_markers()
+		self.est_pub.publish(self.est_marker)
 
+	def update_command(self, data):
 		self.localize.update(data)
 		self.pose = self.localize.estimate()
+		self.update_markers()
 
 		distance = self.get_distance()
 		angle = self.get_angle_diff()
@@ -96,7 +106,7 @@ def main():
 	controller = DroneController()
 	run = raw_input("Press any key to run:")
 
-	print "Hovering"
+	print "Running"
 	controller.listener()
 
 if __name__ == '__main__':

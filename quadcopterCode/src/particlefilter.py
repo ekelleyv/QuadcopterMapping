@@ -6,7 +6,12 @@ import random
 import math
 #ROS related initializations
 import os
+import rospy
 from walkerrandom import *
+from std_msgs.msg import *
+from ardrone_autonomy.msg import Navdata
+from visualization_msgs.msg import *
+from geometry_msgs.msg import Pose
 
 #Coordinate frame info
 # -linear.x: move backward
@@ -20,16 +25,20 @@ from walkerrandom import *
 # +angular.z: turn right
 
 class particlefilter:
-	def __init__(self, num_particles=1000, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3):
+	def __init__(self, num_particles=10, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3):
 		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
 		self.fp_part = open(self.filename+"_part.txt", "w")
 		self.num_particles = num_particles
+
+
 		self.vis_noise = vis_noise
 		self.ultra_noise = ultra_noise
 		self.mag_noise = mag_noise
 		self.linear_noise = linear_noise
 		self.angular_noise = angular_noise
+
+
 		self.start_mag_heading = 0
 		self.start_gyr_heading = 0
 		self.gyr_theta = 0
@@ -45,8 +54,8 @@ class particlefilter:
 			self.particle_list.append(particle(self))
 		#self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
 		self.fp.write("self.step,delta_t,x_acc,y_acc,z_acc,gyr_theta_est,delta_theta,self.acc_est.x,self.acc_est.y,self.acc_est.z,self.acc_est.theta,x_vel,y_vel,z_est,magX,magY,magZ,mag_theta_est,new_x,new_y,self.vis_est.x,self.vis_est.y\n")
-
-
+		self.est_marker = Marker()
+		self.update_marker()
 
 	#Propogate particles based on accelerometer data and gyroscope-based theta
 	def propogate(self, delta_t, x_acc, y_acc, z_acc, gyr_theta_est):
@@ -64,6 +73,7 @@ class particlefilter:
 		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), delta_theta, False)
 
 		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc, gyr_theta_est, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
+		self.update_marker()
 
 	def convert_g(self, acc):
 		g_to_mmss = 9806.65
@@ -102,6 +112,32 @@ class particlefilter:
 
 		self.fp.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, mag_theta_est, new_x, new_y, self.vis_est.x, self.vis_est.y))
 		self.step += 1
+		self.estimate()
+		self.update_marker()
+		
+
+	def update_marker(self):
+		# self.est_marker.stamp = rospy.Time.now()
+		self.est_marker.header.frame_id = "/ardrone_base_link"
+		self.est_marker.header.stamp = rospy.Time.now()
+		self.est_marker.type = Marker.SPHERE
+		self.est_marker.pose.position.x = self.est.x
+		self.est_marker.pose.position.y = self.est.y
+		self.est_marker.pose.position.z = self.est.z
+
+		self.est_marker.pose.orientation.x = 0
+		self.est_marker.pose.orientation.y = 0
+		self.est_marker.pose.orientation.z = 0
+		self.est_marker.pose.orientation.w = 0
+
+		self.est_marker.scale.x = .1
+		self.est_marker.scale.y = .1
+		self.est_marker.scale.z = .1
+
+		self.est_marker.color.a = 1
+		self.est_marker.color.r = 0
+		self.est_marker.color.g = 1
+		self.est_marker.color.b = 0
 
 
 	#Calculate the weight for particles

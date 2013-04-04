@@ -20,49 +20,54 @@ from walkerrandom import *
 # +angular.z: turn right
 
 class particlefilter:
-	def __init__(self, num_particles=1000, linear_noise=10, angular_noise=.5):
+	def __init__(self, num_particles=1000, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3):
 		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
 		self.fp_part = open(self.filename+"_part.txt", "w")
 		self.num_particles = num_particles
+		self.vis_noise = vis_noise
+		self.ultra_noise = ultra_noise
+		self.mag_noise = mag_noise
 		self.linear_noise = linear_noise
 		self.angular_noise = angular_noise
 		self.start_mag_heading = 0
 		self.start_gyr_heading = 0
-		self.prev_theta = 0
+		self.gyr_theta = 0
 		self.particle_list = []
 		self.weight_dict = dict()
 		self.first_propogate = True
 		self.first_correct = True
 		self.step = 0
 		self.est = particle(self)
+		self.acc_est = particle(self) #Estimation using acc and gyr
+		self.vis_est = particle(self) #Estimation using vis odometry and ultrasound
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
-		self.fp.write("step,delta_t,x_acc,y_acc,z_acc,theta_est_gyr,norm_delta_theta,prev_theta,x_vel,y_vel,z_est,magX,magY,magZ,theta_est_mag,correct_x,correct_y\n")
-		self.fp_part.write("step,delta_t,x,y,z,x_vel,y_vel,z_vel,theta\n")
+		#self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
+		self.fp.write("self.step,delta_t,x_acc,y_acc,z_acc,gyr_theta_est,delta_theta,self.acc_est.x,self.acc_est.y,self.acc_est.z,self.acc_est.theta,x_vel,y_vel,z_est,magX,magY,magZ,mag_theta_est,new_x,new_y,self.vis_est.x,self.vis_est.y\n")
 
 
 
 	#Propogate particles based on accelerometer data and gyroscope-based theta
-	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_est):
-		#Dont need to zero gyr
+	def propogate(self, delta_t, x_acc, y_acc, z_acc, gyr_theta_est):
 		if (self.first_propogate):
-			self.start_gyr_heading = theta_est
+			self.start_gyr_heading = gyr_theta_est
 
 		#PROPOGATE USING THE AVERAGE OF EST.THETA AND THETA_EST-PREV_THETA
 
-		norm_delta_theta = self.clamp_angle(theta_est - self.prev_theta - self.start_gyr_heading) #Should I be using self.est.theta instead of prev_theta?
+		delta_theta = self.clamp_angle((gyr_theta_est- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
 
 		for particle in self.particle_list:
-			particle.propogate(delta_t, convert_g(x_acc), convert_g(y_acc), convert_g(z_acc), norm_delta_theta)
+			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), delta_theta, True)
 
-		self.prev_theta = self.clamp_angle(self.prev_theta + norm_delta_theta)
+		#Propogate estimate based on magnetometer. for testing
+		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), delta_theta, False)
 
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc, theta_est, norm_delta_theta, self.prev_theta))
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc, gyr_theta_est, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
 
-	def convert_g(acc):
-		rate = 9806.65
-		return acc*rate
+	def convert_g(self, acc):
+		g_to_mmss = 9806.65
+		return acc*g_to_mmss
 
 
 	#Correct particles based on visual odometry and magnetometer readings
@@ -70,15 +75,15 @@ class particlefilter:
 		if (self.first_correct):
 			self.start_mag_heading = self.get_heading(magX, magY, magZ)
 
-		theta_est = self.clamp_angle(self.get_heading(magX, magY, magY)-self.start_mag_heading)
-		x_delta = (x_vel*math.cos(theta_est) - y_vel*math.sin(theta_est))*delta_t
-		y_delta = (x_vel*math.sin(theta_est) + y_vel*math.cos(theta_est))*delta_t
+		mag_theta_est = self.clamp_angle(self.get_heading(magX, magY, magY)-self.start_mag_heading)
+		x_delta = (x_vel*math.cos(mag_theta_est) - y_vel*math.sin(mag_theta_est))*delta_t
+		y_delta = (x_vel*math.sin(mag_theta_est) + y_vel*math.cos(mag_theta_est))*delta_t
 
 		new_x = x_delta + self.est.x
 		new_y = y_delta + self.est.y
 
 		#Weight particles
-		self.weight_particles(delta_t, new_x, new_y, z_est, theta_est)
+		self.weight_particles(delta_t, new_x, new_y, z_est, mag_theta_est)
 
 		#Create new set of particles
 		self.particle_list = []
@@ -90,7 +95,12 @@ class particlefilter:
 			particle = wrand.random()
 			self.particle_list.append(particle)
 
-		self.fp.write("%f, %f, %f, %f, %f, %f, %f, %f, %f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, theta_est, new_x, new_y))
+		self.vis_est.x += x_delta;
+		self.vis_est.y += y_delta;
+		self.vis_est.z = z_est;
+		self.vis_est.theta = mag_theta_est
+
+		self.fp.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, mag_theta_est, new_x, new_y, self.vis_est.x, self.vis_est.y))
 		self.step += 1
 
 
@@ -101,11 +111,18 @@ class particlefilter:
 		for particle in self.particle_list:
 			#THIS WEIGHTING IS JUST A PLACEHOLDER
 			#REPLACE WITH SENSOR MODEL DATA
-			x_diff = abs(x_est - particle.x)
-			y_diff = abs(y_est - particle.y)
-			z_diff = abs(z_est - particle.z)
-			theta_diff = abs(theta_est - particle.theta)
-			weight = 1/(x_diff + y_diff + z_diff + 1)
+
+			#Calculate distances
+			lat_dist = ((x_est - particle.x)**2 + (y_est - particle.y)**2)**.5
+			vert_dist = abs(z_est - particle.z)
+			theta_dist = abs(theta_est - particle.theta)
+
+			lat_weight = self.normpdf(lat_dist, 0, self.vis_noise) #Potentially do the z distance separately?
+			vert_weight = self.normpdf(vert_dist, 0, self.ultra_noise)
+			theta_weight = self.normpdf(theta_dist, 0, self.mag_noise)
+
+			weight = lat_weight + vert_weight + theta_weight
+
 			self.weight_dict[particle] = weight
 			weight_sum += weight
 
@@ -114,6 +131,12 @@ class particlefilter:
 			if (weight_sum != 0):
 				weight = weight/weight_sum
 
+	#http://stackoverflow.com/questions/12412895/calculate-probability-in-normal-distribution-given-mean-std-in-python
+	def normpdf(self, x, mean, sd):
+	    var = float(sd)**2
+	    denom = (2*math.pi*var)**.5
+	    num = math.exp(-(float(x)-float(mean))**2/(2*var))
+	    return num/denom
 
 	# http://www51.honeywell.com/aero/common/documents/myaerospacecatalog-documents/Defense_Brochures-documents/Magnetic__Literature_Application_notes-documents/AN203_Compass_Heading_Using_Magnetometers.pdf
 	def get_heading(self, magX, magY, magZ):
@@ -160,14 +183,22 @@ class particle:
 		self.parent = particlefilter
 
 	#Update the values of the particle based 
-	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_delta):
+	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_delta, noise):
 		if (self.parent.step%100 == 0):
 			self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
-		x_acc_noise = random.normalvariate(x_acc, self.parent.linear_noise)
-		y_acc_noise = random.normalvariate(y_acc, self.parent.linear_noise)
-		z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)
+		
+		x_acc_noise = x_acc
+		y_acc_noise = y_acc
+		z_acc_noise = z_acc
+		theta_delta_noise = theta_delta
 
-		theta_delta_noise = random.normalvariate(theta_delta, self.parent.angular_noise)
+		if (noise):
+			x_acc_noise = random.normalvariate(x_acc, self.parent.linear_noise)
+			y_acc_noise = random.normalvariate(y_acc, self.parent.linear_noise)
+			z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)
+			theta_delta_noise = random.normalvariate(theta_delta, self.parent.angular_noise)
+
+		
 
 		#In local coordinate frame
 		self.x_vel = x_acc_noise*delta_t + self.x_vel

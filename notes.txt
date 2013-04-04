@@ -1,7 +1,33 @@
-Questions:
-	What does sensor precision mean?
-	Is the accelerometer in g's or m/s/s? How do I deal with g's?
+X Acceleration
+mean: -0.007912
+stdev: 0.001721
 
-Range of ultrasound is ~6 meters
 
-For some reason I am getting + an - readings from the converted magnetometer
+Y Acceleration
+mean: 0.015373
+stdev: 0.001960
+
+
+Z Acceleration
+mean: 0.942871
+stdev: 0.002842
+
+
+Gyroscope Theta
+mean: -32.889192
+stdev: 2.300915
+
+
+X Magnetometer
+mean: 79.583987
+stdev: 2.431526
+
+
+Y Magnetometer
+mean: -67.247644
+stdev: 2.152978
+
+
+Magnetometer Theta Est
+mean: 115.087481
+stdev: 37.120281

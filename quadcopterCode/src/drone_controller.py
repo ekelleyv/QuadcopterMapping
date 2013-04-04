@@ -43,13 +43,10 @@ class DroneController():
 		self.localize = localize()
 		self.pose = particle(self)
 		self.start = True
-		self.est_pub = rospy.Publisher('pf_marker', Marker)
 
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 
 		self.current_waypoint = self.waypoints.get_waypoint();
-
-		self.est_marker = Marker()
 
 		# self.controller_timer = rospy.Timer(rospy.Duration(CONTROLLER_PERIOD/1000.0),self.update_command)
 
@@ -71,10 +68,6 @@ class DroneController():
 		rospy.Subscriber("/ardrone/navdata", Navdata, self.update_command)
 		# spin() simply keeps python from exiting until this node is stopped
 		rospy.spin()
-
-	def update_markers(self):
-		self.est_marker = self.localize.get_markers()
-		self.est_pub.publish(self.est_marker)
 
 	def update_command(self, data):
 		self.localize.update(data)

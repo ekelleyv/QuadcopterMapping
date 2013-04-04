@@ -52,9 +52,10 @@ class particlefilter:
 		self.vis_est = particle(self) #Estimation using vis odometry and ultrasound
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
-		#self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
+		
 		self.fp.write("self.step,delta_t,x_acc,y_acc,z_acc,gyr_theta_est,delta_theta,self.acc_est.x,self.acc_est.y,self.acc_est.z,self.acc_est.theta,x_vel,y_vel,z_est,magX,magY,magZ,mag_theta_est,new_x,new_y,self.vis_est.x,self.vis_est.y\n")
-		self.est_marker = Marker()
+		self.est_pose = Pose()
+		self.est_pub = rospy.Publisher('pf_pose', Pose)
 		self.update_marker()
 
 	#Propogate particles based on accelerometer data and gyroscope-based theta
@@ -62,17 +63,19 @@ class particlefilter:
 		if (self.first_propogate):
 			self.start_gyr_heading = gyr_theta_est
 
+		z_acc_zero = z_acc - 0.942871 #From sensor data
+
 		#PROPOGATE USING THE AVERAGE OF EST.THETA AND THETA_EST-PREV_THETA
 
 		delta_theta = self.clamp_angle((gyr_theta_est- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
 
 		for particle in self.particle_list:
-			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), delta_theta, True)
+			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), delta_theta, True)
 
 		#Propogate estimate based on magnetometer. for testing
-		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), delta_theta, False)
+		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), delta_theta, False)
 
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc, gyr_theta_est, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc_zero, gyr_theta_est, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
 		self.update_marker()
 
 	def convert_g(self, acc):
@@ -117,27 +120,11 @@ class particlefilter:
 		
 
 	def update_marker(self):
-		# self.est_marker.stamp = rospy.Time.now()
-		self.est_marker.header.frame_id = "/ardrone_base_link"
-		self.est_marker.header.stamp = rospy.Time.now()
-		self.est_marker.type = Marker.SPHERE
-		self.est_marker.pose.position.x = self.est.x
-		self.est_marker.pose.position.y = self.est.y
-		self.est_marker.pose.position.z = self.est.z
+		self.est_pose.point.x = self.est.x
+		self.est_pose.point.y = self.est.y
+		self.est_pose.point.z = self.est.z
 
-		self.est_marker.pose.orientation.x = 0
-		self.est_marker.pose.orientation.y = 0
-		self.est_marker.pose.orientation.z = 0
-		self.est_marker.pose.orientation.w = 0
-
-		self.est_marker.scale.x = .1
-		self.est_marker.scale.y = .1
-		self.est_marker.scale.z = .1
-
-		self.est_marker.color.a = 1
-		self.est_marker.color.r = 0
-		self.est_marker.color.g = 1
-		self.est_marker.color.b = 0
+		self.est_pub.publish(self.est_pose)
 
 
 	#Calculate the weight for particles

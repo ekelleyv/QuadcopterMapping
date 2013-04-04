@@ -26,9 +26,6 @@ class localize:
 		self.time = time.time()
 		self.pf.propogate(delta_t, data.ax, data.ay, data.az, data.rotZ)
 		self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
-	
-	def get_markers(self):
-		return self.pf.est_marker
 
 	def estimate(self):
 		return self.pf.est

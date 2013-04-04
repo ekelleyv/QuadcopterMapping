@@ -31,3 +31,13 @@ stdev: 2.152978
 Magnetometer Theta Est
 mean: 115.087481
 stdev: 37.120281
+
+
+Todo:
+	Zero ZAcc (the drone thinks it's falling)
+	Change from using rviz to publishing Pose msgs and plotting in rxplot
+	Basic controller logic
+	Tag detection
+		Camera config
+	Position estimation using tag
+	Incorporating tag position into localization

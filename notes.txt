@@ -35,7 +35,7 @@ stdev: 37.120281
 
 Todo:
 	X	Zero ZAcc (the drone thinks it's falling)
-	Change from using rviz to publishing Pose msgs and plotting in rxplot
+	-	Change from using rviz to publishing Pose msgs and plotting in rxplot
 	Basic controller logic
 	Tag detection
 		Camera config

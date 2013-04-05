@@ -7,10 +7,8 @@ import math
 import roslib
 import rospy
 import os
-roslib.load_manifest('ardrone_autonomy')
 from std_msgs.msg import String, Float32
 from particlefilter import *
-from ardrone_autonomy.msg import *
 from visualization_msgs.msg import *
 
 #SHOULD BE PUBLISHING A TRANSFORM
@@ -24,7 +22,7 @@ class localize:
 		#Get delta t and update tm
 		delta_t = time.time() - self.time #Time in seconds
 		self.time = time.time()
-		self.pf.propogate(delta_t, data.ax, data.ay, data.az, data.rotZ)
+		self.pf.propogate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
 		self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 
 	def estimate(self):

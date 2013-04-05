@@ -46,7 +46,7 @@ class DroneController():
 
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 
-		self.current_waypoint = self.waypoints.get_waypoint();
+		self.current_waypoint = self.waypoints.get_waypoint()
 
 		# self.controller_timer = rospy.Timer(rospy.Duration(CONTROLLER_PERIOD/1000.0),self.update_command)
 
@@ -72,7 +72,6 @@ class DroneController():
 	def update_command(self, data):
 		self.localize.update(data)
 		self.pose = self.localize.estimate()
-		self.update_markers()
 
 		distance = self.get_distance()
 		angle = self.get_angle_diff()

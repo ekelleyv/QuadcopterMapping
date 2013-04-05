@@ -3,15 +3,15 @@
 import sys
 import time
 import random
-import math
+from math import *
+import numpy
 #ROS related initializations
 import os
 import rospy
 from walkerrandom import *
 from std_msgs.msg import *
-from ardrone_autonomy.msg import Navdata
 from visualization_msgs.msg import *
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import *
 
 #Coordinate frame info
 # -linear.x: move backward
@@ -25,7 +25,7 @@ from geometry_msgs.msg import Pose
 # +angular.z: turn right
 
 class particlefilter:
-	def __init__(self, num_particles=10, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3):
+	def __init__(self, num_particles=100, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3):
 		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
 		self.fp_part = open(self.filename+"_part.txt", "w")
@@ -52,16 +52,17 @@ class particlefilter:
 		self.vis_est = particle(self) #Estimation using vis odometry and ultrasound
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
-		
-		self.fp.write("self.step,delta_t,x_acc,y_acc,z_acc,gyr_theta_est,delta_theta,self.acc_est.x,self.acc_est.y,self.acc_est.z,self.acc_est.theta,x_vel,y_vel,z_est,magX,magY,magZ,mag_theta_est,new_x,new_y,self.vis_est.x,self.vis_est.y\n")
-		self.est_pose = Pose()
-		self.est_pub = rospy.Publisher('pf_pose', Pose)
+
+		self.fp.write("self.step,delta_t,x_acc,y_acc,z_acc,gyr_theta_est,rotX,rotY,delta_theta,self.acc_est.x,self.acc_est.y,self.acc_est.z,self.acc_est.theta,x_vel,y_vel,z_est,magX,magY,magZ,mag_theta_est,new_x,new_y,self.vis_est.x,self.vis_est.y,self.est.x,self.est.y,self.est.theta\n")
+		self.est_pose = Point()
+		self.line = Marker()
+		self.est_pub = rospy.Publisher('pf_pose', Point)
 		self.update_marker()
 
 	#Propogate particles based on accelerometer data and gyroscope-based theta
-	def propogate(self, delta_t, x_acc, y_acc, z_acc, gyr_theta_est):
+	def propogate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, rotZ):
 		if (self.first_propogate):
-			self.start_gyr_heading = gyr_theta_est
+			self.start_gyr_heading = rotZ
 
 		z_acc_zero = z_acc - 0.942871 #From sensor data
 
@@ -70,13 +71,12 @@ class particlefilter:
 		delta_theta = self.clamp_angle((gyr_theta_est- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
 
 		for particle in self.particle_list:
-			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), delta_theta, True)
+			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), rotX, rotY, delta_theta, True)
 
 		#Propogate estimate based on magnetometer. for testing
-		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), delta_theta, False)
+		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), rotX, rotY, delta_theta, False)
 
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, " % (self.step, delta_t, x_acc, y_acc, z_acc_zero, gyr_theta_est, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
-		self.update_marker()
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f " % (self.step, delta_t, x_acc, y_acc, z_acc_zero, gyr_theta_est, rotX, rotY, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
 
 	def convert_g(self, acc):
 		g_to_mmss = 9806.65
@@ -89,8 +89,8 @@ class particlefilter:
 			self.start_mag_heading = self.get_heading(magX, magY, magZ)
 
 		mag_theta_est = self.clamp_angle(self.get_heading(magX, magY, magY)-self.start_mag_heading)
-		x_delta = (x_vel*math.cos(mag_theta_est) - y_vel*math.sin(mag_theta_est))*delta_t
-		y_delta = (x_vel*math.sin(mag_theta_est) + y_vel*math.cos(mag_theta_est))*delta_t
+		x_delta = (x_vel*cos(mag_theta_est) - y_vel*sin(mag_theta_est))*delta_t
+		y_delta = (x_vel*sin(mag_theta_est) + y_vel*cos(mag_theta_est))*delta_t
 
 		new_x = x_delta + self.est.x
 		new_y = y_delta + self.est.y
@@ -113,16 +113,17 @@ class particlefilter:
 		self.vis_est.z = z_est;
 		self.vis_est.theta = mag_theta_est
 
-		self.fp.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, mag_theta_est, new_x, new_y, self.vis_est.x, self.vis_est.y))
+		self.fp.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, mag_theta_est, new_x, new_y, self.vis_est.x, self.vis_est.y, self.est.x, self.est.y, self.est.theta))
 		self.step += 1
 		self.estimate()
 		self.update_marker()
 		
 
 	def update_marker(self):
-		self.est_pose.point.x = self.est.x
-		self.est_pose.point.y = self.est.y
-		self.est_pose.point.z = self.est.z
+
+		self.est_pose.x = self.est.x
+		self.est_pose.y = self.est.y
+		self.est_pose.z = self.est.z
 
 		self.est_pub.publish(self.est_pose)
 
@@ -157,14 +158,14 @@ class particlefilter:
 	#http://stackoverflow.com/questions/12412895/calculate-probability-in-normal-distribution-given-mean-std-in-python
 	def normpdf(self, x, mean, sd):
 	    var = float(sd)**2
-	    denom = (2*math.pi*var)**.5
-	    num = math.exp(-(float(x)-float(mean))**2/(2*var))
+	    denom = (2*pi*var)**.5
+	    num = exp(-(float(x)-float(mean))**2/(2*var))
 	    return num/denom
 
 	# http://www51.honeywell.com/aero/common/documents/myaerospacecatalog-documents/Defense_Brochures-documents/Magnetic__Literature_Application_notes-documents/AN203_Compass_Heading_Using_Magnetometers.pdf
 	def get_heading(self, magX, magY, magZ):
 		
-		heading = (math.atan2(magX, magY)/math.pi)*180
+		heading = (atan2(magX, magY)/pi)*180
 		return self.clamp_angle(heading - self.start_mag_heading)
 
 
@@ -206,7 +207,7 @@ class particle:
 		self.parent = particlefilter
 
 	#Update the values of the particle based 
-	def propogate(self, delta_t, x_acc, y_acc, z_acc, theta_delta, noise):
+	def propogate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, theta_delta, noise):
 		if (self.parent.step%100 == 0):
 			self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
 		
@@ -214,33 +215,59 @@ class particle:
 		y_acc_noise = y_acc
 		z_acc_noise = z_acc
 		theta_delta_noise = theta_delta
+		rotX_noise = rotX
+		rotY_noise = rotY
 
 		if (noise):
 			x_acc_noise = random.normalvariate(x_acc, self.parent.linear_noise)
 			y_acc_noise = random.normalvariate(y_acc, self.parent.linear_noise)
 			z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)
+			rotX_noise = random.normalvariate(theta_delta, self.parent.angular_noise)
+			rotY_noise = random.normalvariate(theta_delta, self.parent.angular_noise)
 			theta_delta_noise = random.normalvariate(theta_delta, self.parent.angular_noise)
 
-		
+		self.theta = self.parent.clamp_angle(self.theta + theta_delta_noise)
 
-		#In local coordinate frame
-		self.x_vel = x_acc_noise*delta_t + self.x_vel
-		self.y_vel = y_acc_noise*delta_t + self.y_vel
-		self.z_vel = z_acc_noise*delta_t + self.z_vel
+		acc_m = numpy.matrix([x_acc_noise, y_acc_noise, z_acc_noise, 1])
+
+		acc_global_m = rotate(acc_m, rotX_noise, rotY_noise, self.theta)
+
+		x_acc_global = acc_global_m.item(0);
+		y_acc_global = acc_global_m.item(1);
+		z_acc_global = acc_global_m.item(2);
+
+		self.x_vel = x_acc_global*delta_t + self.x_vel
+		self.y_vel = y_acc_global*delta_t + self.y_vel
+		self.z_vel = z_acc_global*delta_t + self.z_vel
 
 
-		x_delta = (self.x_vel*math.cos(self.theta) - self.y_vel*math.sin(self.theta))*delta_t #Measurements in global coordinate frame
-		y_delta = (self.x_vel*math.sin(self.theta) + self.y_vel*math.cos(self.theta))*delta_t
+		x_delta = self.x_vel*delta_t
+		y_delta = self.y_vel*delta_t
 		z_delta = self.z_vel*delta_t
 
 		self.x += x_delta
 		self.y += y_delta
 		self.z += z_delta
 
-		self.theta = self.parent.clamp_angle(self.theta + theta_delta_noise)
-
 	def to_string(self):
 		return "(%.2f, %.2f, %.2f, %.4f)" % (self.x, self.y, self.z, self.theta)
+
+
+def rotate(m, rotX, rotY, rotZ):
+	#RIGHT HAND VS LEFT HAND?
+	rotX_m = numpy.matrix([[ 1, 0, 0, 0],
+							[ 0, cos(rotX), -sin(rotX), 0],
+							[ 0, sin(rotX), cos(rotX), 0],
+							[ 0, 0, 0, 1]])
+	rotY_m = numpy.matrix([[cos(rotY), 0, -sin(rotY), 0],
+							[ 0, 1, 0, 0],
+							[ sin(rotY), 0, cos(rotY), 0],
+							[ 0, 0, 0, 1]])
+	rotZ_m = numpy.matrix([[cos(rotZ), -sin(rotZ), 0, 0],
+							[sin(rotZ),cos(rotZ),0,0],
+							[0,0,1,0],
+							[0,0,0,1]])
+	return rotX_m*rotY_m*rotZ_m*m
 
 
 def main():
@@ -249,7 +276,8 @@ def main():
 	print "---------INIT---------"
 
 	pf.print_particles()
-	pf.propogate(.1, 10, 10, 0, 32)
+	# propogate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, theta_delta, noise)
+	pf.propogate(.1, 10, 10, 0, 0, 0, 32, True) 
 
 	print "---------PROP---------"
 

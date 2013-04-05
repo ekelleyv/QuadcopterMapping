@@ -26,6 +26,7 @@ from geometry_msgs.msg import *
 
 class particlefilter:
 	def __init__(self, num_particles=100, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3):
+		print("Starting a particle filer with %d particles" % num_particles)
 		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
 		self.fp_part = open(self.filename+"_part.txt", "w")
@@ -64,19 +65,17 @@ class particlefilter:
 		if (self.first_propogate):
 			self.start_gyr_heading = rotZ
 
-		z_acc_zero = z_acc - 0.942871 #From sensor data
-
 		#PROPOGATE USING THE AVERAGE OF EST.THETA AND THETA_EST-PREV_THETA
 
-		delta_theta = self.clamp_angle((gyr_theta_est- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
+		delta_theta = self.clamp_angle((rotZ- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
 
 		for particle in self.particle_list:
-			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), rotX, rotY, delta_theta, True)
+			particle.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), rotX, rotY, delta_theta, True)
 
 		#Propogate estimate based on magnetometer. for testing
-		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc_zero), rotX, rotY, delta_theta, False)
+		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), rotX, rotY, delta_theta, False)
 
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f " % (self.step, delta_t, x_acc, y_acc, z_acc_zero, gyr_theta_est, rotX, rotY, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f " % (self.step, delta_t, x_acc, y_acc, z_acc_zero, rotZ, rotX, rotY, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
 
 	def convert_g(self, acc):
 		g_to_mmss = 9806.65
@@ -228,13 +227,13 @@ class particle:
 
 		self.theta = self.parent.clamp_angle(self.theta + theta_delta_noise)
 
-		acc_m = numpy.matrix([x_acc_noise, y_acc_noise, z_acc_noise, 1])
+		acc_m = numpy.matrix([[x_acc_noise], [y_acc_noise], [z_acc_noise], [1]])
 
 		acc_global_m = rotate(acc_m, rotX_noise, rotY_noise, self.theta)
 
-		x_acc_global = acc_global_m.item(0);
-		y_acc_global = acc_global_m.item(1);
-		z_acc_global = acc_global_m.item(2);
+		x_acc_global = acc_global_m.item(0)
+		y_acc_global = acc_global_m.item(1)
+		z_acc_global = acc_global_m.item(2) - 0.942871 #From sensor data
 
 		self.x_vel = x_acc_global*delta_t + self.x_vel
 		self.y_vel = y_acc_global*delta_t + self.y_vel

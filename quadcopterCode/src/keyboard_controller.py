@@ -36,11 +36,18 @@ class KeyMapping(object):
 class KeyboardController(DroneVideoDisplay):
 	def __init__(self):
 		super(KeyboardController,self).__init__()
-		
 		self.pitch = 0
 		self.roll = 0
 		self.yaw_velocity = 0 
 		self.z_velocity = 0
+
+		app = QtGui.QApplication(sys.argv)
+		controller = BasicCommands()
+		display = KeyboardController()
+		display.show()
+
+	def setup(self):
+
 
 	def keyPressEvent(self, event):
 		key = event.key()

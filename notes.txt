@@ -32,8 +32,17 @@ Magnetometer Theta Est
 mean: 115.087481
 stdev: 37.120281
 
+Timing
+	1         0.021338
+	10        0.021945
+	100       0.023219
+	1000      0.205460
+	10000     2.091557
+	100000    21.567765
+
 
 Todo:
+	Check sign of acc
 	X	Zero ZAcc (the drone thinks it's falling)
 	-	Change from using rviz to publishing Pose msgs and plotting in rxplot
 	Basic controller logic

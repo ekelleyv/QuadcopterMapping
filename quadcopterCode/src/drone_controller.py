@@ -20,8 +20,8 @@ from localize import *
 from particlefilter import *
 
 from math import *
+from time import *
 
-CONTROLLER_PERIOD = 100 #ms
 
 LINEAR_ERROR = 200 #mm
 
@@ -38,11 +38,15 @@ ANGULAR_GAIN = .1 #
 
 
 class DroneController():
-	def __init__(self):
+	def __init__(self, parent):
+		rospy.init_node('drone_controller')
 		self.cmd = BasicCommands()
 		self.localize = localize()
 		self.pose = particle(self)
 		self.start = True
+		self.start_time = time()
+		self.last_time = time()
+		self.steps = 1
 
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 
@@ -70,6 +74,7 @@ class DroneController():
 		rospy.spin()
 
 	def update_command(self, data):
+		self.last_time = time()
 		self.localize.update(data)
 		self.pose = self.localize.estimate()
 
@@ -84,6 +89,10 @@ class DroneController():
 		y_diff = (self.current_waypoint.y - self.pose.y)
 		z_diff = (self.current_waypoint.z - self.pose.z)
 
+		# print("Elapsed time: %f" % (time() - self.last_time))
+		avg = (time() - self.start_time)/self.steps
+		print("Average time: %f" % (avg))
+		self.steps += 1
 		#Define tilt as being within - and + MAX values
 
 		#SetCommand

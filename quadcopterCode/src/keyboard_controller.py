@@ -19,14 +19,14 @@ from PySide import QtCore, QtGui
 
 # Here we define the keyboard map for our controller (note that python has no enums, so we use a class)
 class KeyMapping(object):
-	PitchForward     = QtCore.Qt.Key.Key_E
-	PitchBackward    = QtCore.Qt.Key.Key_D
-	RollLeft         = QtCore.Qt.Key.Key_S
-	RollRight        = QtCore.Qt.Key.Key_F
-	YawLeft          = QtCore.Qt.Key.Key_W
-	YawRight         = QtCore.Qt.Key.Key_R
-	IncreaseAltitude = QtCore.Qt.Key.Key_Q
-	DecreaseAltitude = QtCore.Qt.Key.Key_A
+	PitchForward     = QtCore.Qt.Key.Key_W
+	PitchBackward    = QtCore.Qt.Key.Key_S
+	RollLeft         = QtCore.Qt.Key.Key_A
+	RollRight        = QtCore.Qt.Key.Key_D
+	YawLeft          = QtCore.Qt.Key.Key_Q
+	YawRight         = QtCore.Qt.Key.Key_E
+	IncreaseAltitude = QtCore.Qt.Key.Key_R
+	DecreaseAltitude = QtCore.Qt.Key.Key_F
 	Takeoff          = QtCore.Qt.Key.Key_Y
 	Land             = QtCore.Qt.Key.Key_H
 	Emergency        = QtCore.Qt.Key.Key_Space
@@ -36,18 +36,14 @@ class KeyMapping(object):
 class KeyboardController(DroneVideoDisplay):
 	def __init__(self):
 		super(KeyboardController,self).__init__()
+		
 		self.pitch = 0
 		self.roll = 0
 		self.yaw_velocity = 0 
 		self.z_velocity = 0
 
-		app = QtGui.QApplication(sys.argv)
-		controller = BasicCommands()
-		display = KeyboardController()
-		display.show()
-
-	def setup(self):
-
+		self.linear_gain = .2
+		self.angular_gain = .5
 
 	def keyPressEvent(self, event):
 		key = event.key()
@@ -64,24 +60,24 @@ class KeyboardController(DroneVideoDisplay):
 			else:
 				# Now we handle moving, notice that this section is the opposite (+=) of the keyrelease section
 				if key == KeyMapping.YawLeft:
-					self.yaw_velocity += 1
+					self.yaw_velocity += self.angular_gain
 				elif key == KeyMapping.YawRight:
-					self.yaw_velocity += -1
+					self.yaw_velocity += -self.angular_gain
 
 				elif key == KeyMapping.PitchForward:
-					self.pitch += 1
+					self.pitch += self.linear_gain 
 				elif key == KeyMapping.PitchBackward:
-					self.pitch += -1
+					self.pitch += -self.linear_gain 
 
 				elif key == KeyMapping.RollLeft:
-					self.roll += 1
+					self.roll += self.linear_gain 
 				elif key == KeyMapping.RollRight:
-					self.roll += -1
+					self.roll += -self.linear_gain 
 
 				elif key == KeyMapping.IncreaseAltitude:
-					self.z_velocity += 1
+					self.z_velocity += self.linear_gain 
 				elif key == KeyMapping.DecreaseAltitude:
-					self.z_velocity += -1
+					self.z_velocity += -self.linear_gain 
 
 			# finally we set the command to be sent. The controller handles sending this at regular intervals
 			controller.SetCommand(self.roll, self.pitch, self.yaw_velocity, self.z_velocity)
@@ -95,24 +91,24 @@ class KeyboardController(DroneVideoDisplay):
 			# Note that we don't handle the release of emergency/takeoff/landing keys here, there is no need.
 			# Now we handle moving, notice that this section is the opposite (-=) of the keypress section
 			if key == KeyMapping.YawLeft:
-				self.yaw_velocity -= 1
+				self.yaw_velocity -= self.angular_gain
 			elif key == KeyMapping.YawRight:
-				self.yaw_velocity -= -1
+				self.yaw_velocity -= -self.angular_gain
 
 			elif key == KeyMapping.PitchForward:
-				self.pitch -= 1
+				self.pitch -= self.linear_gain 
 			elif key == KeyMapping.PitchBackward:
-				self.pitch -= -1
+				self.pitch -= -self.linear_gain 
 
 			elif key == KeyMapping.RollLeft:
-				self.roll -= 1
+				self.roll -= self.linear_gain 
 			elif key == KeyMapping.RollRight:
-				self.roll -= -1
+				self.roll -= -self.linear_gain 
 
 			elif key == KeyMapping.IncreaseAltitude:
-				self.z_velocity -= 1
+				self.z_velocity -= self.linear_gain 
 			elif key == KeyMapping.DecreaseAltitude:
-				self.z_velocity -= -1
+				self.z_velocity -= -self.linear_gain 
 
 			# finally we set the command to be sent. The controller handles sending this at regular intervals
 			controller.SetCommand(self.roll, self.pitch, self.yaw_velocity, self.z_velocity)

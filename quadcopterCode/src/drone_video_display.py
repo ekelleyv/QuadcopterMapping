@@ -49,7 +49,7 @@ class DroneVideoDisplay(QtGui.QMainWindow):
 	def __init__(self):
 		# Construct the parent class
 		super(DroneVideoDisplay, self).__init__()
-
+		print("INIT VIDEO")
 		# Setup our very basic GUI - a label which fills the whole window and holds our image
 		self.setWindowTitle('AR.Drone Video Feed')
 		self.imageBox = QtGui.QLabel(self)

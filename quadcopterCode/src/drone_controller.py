@@ -15,6 +15,8 @@ from visualization_msgs.msg import *
 # An enumeration of Drone Statuses
 from drone_status import DroneStatus
 from basic_commands import BasicCommands
+from keyboard_controller import *
+from drone_video_display import DroneVideoDisplay
 from waypoints import waypoints
 from localize import *
 from particlefilter import *
@@ -37,10 +39,9 @@ ANGULAR_GAIN = .1 #
 
 
 
-class DroneController():
-	def __init__(self, parent):
-		rospy.init_node('drone_controller')
-		self.cmd = BasicCommands()
+class DroneController(DroneVideoDisplay):
+	def __init__(self):
+		# self.cmd = BasicCommands()
 		self.localize = localize()
 		self.pose = particle(self)
 		self.start = True
@@ -52,7 +53,6 @@ class DroneController():
 
 		self.current_waypoint = self.waypoints.get_waypoint()
 
-		# self.controller_timer = rospy.Timer(rospy.Duration(CONTROLLER_PERIOD/1000.0),self.update_command)
 
 	def get_distance(self):
 		return sqrt((self.current_waypoint.x - self.pose.x)**2 + (self.current_waypoint.y - self.pose.y)**2 + (self.current_waypoint.y - self.pose.y)**2)

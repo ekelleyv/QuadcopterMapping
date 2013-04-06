@@ -75,7 +75,7 @@ class particlefilter:
 		#Propogate estimate based on magnetometer. for testing
 		self.acc_est.propogate(delta_t, self.convert_g(x_acc), self.convert_g(y_acc), self.convert_g(z_acc), rotX, rotY, delta_theta, False)
 
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f " % (self.step, delta_t, x_acc, y_acc, z_acc_zero, rotZ, rotX, rotY, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f," % (self.step, delta_t, x_acc, y_acc, z_acc, rotZ, rotX, rotY, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
 
 	def convert_g(self, acc):
 		g_to_mmss = 9806.65
@@ -88,8 +88,8 @@ class particlefilter:
 			self.start_mag_heading = self.get_heading(magX, magY, magZ)
 
 		mag_theta_est = self.clamp_angle(self.get_heading(magX, magY, magY)-self.start_mag_heading)
-		x_delta = (x_vel*cos(mag_theta_est) - y_vel*sin(mag_theta_est))*delta_t
-		y_delta = (x_vel*sin(mag_theta_est) + y_vel*cos(mag_theta_est))*delta_t
+		x_delta = (x_vel*cos(radians(mag_theta_est)) - y_vel*sin(radians(mag_theta_est)))*delta_t
+		y_delta = (x_vel*sin(radians(mag_theta_est)) + y_vel*cos(radians(mag_theta_est)))*delta_t
 
 		new_x = x_delta + self.est.x
 		new_y = y_delta + self.est.y
@@ -255,15 +255,15 @@ class particle:
 def rotate(m, rotX, rotY, rotZ):
 	#RIGHT HAND VS LEFT HAND?
 	rotX_m = numpy.matrix([[ 1, 0, 0, 0],
-							[ 0, cos(rotX), -sin(rotX), 0],
-							[ 0, sin(rotX), cos(rotX), 0],
+							[ 0, cos(radians(rotX)), -sin(radians(rotX)), 0],
+							[ 0, sin(radians(rotX)), cos(radians(rotX)), 0],
 							[ 0, 0, 0, 1]])
-	rotY_m = numpy.matrix([[cos(rotY), 0, -sin(rotY), 0],
+	rotY_m = numpy.matrix([[cos(radians(rotY)), 0, -sin(radians(rotY)), 0],
 							[ 0, 1, 0, 0],
-							[ sin(rotY), 0, cos(rotY), 0],
+							[ sin(radians(rotY)), 0, cos(radians(rotY)), 0],
 							[ 0, 0, 0, 1]])
-	rotZ_m = numpy.matrix([[cos(rotZ), -sin(rotZ), 0, 0],
-							[sin(rotZ),cos(rotZ),0,0],
+	rotZ_m = numpy.matrix([[cos(radians(rotZ)), -sin(radians(rotZ)), 0, 0],
+							[sin(radians(rotZ)),cos(radians(rotZ)),0,0],
 							[0,0,1,0],
 							[0,0,0,1]])
 	return rotX_m*rotY_m*rotZ_m*m

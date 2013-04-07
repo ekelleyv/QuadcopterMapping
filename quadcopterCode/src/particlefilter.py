@@ -120,6 +120,7 @@ class particlefilter:
 	def resample(self, data):
 		marker_id = data.id
 		pose = data.pose
+		print(pose)
 		# for i in range(self.num_particles):
 		# 	particle = wrand.random()
 		# 	self.particle_list.append(particle)

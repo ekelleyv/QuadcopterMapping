@@ -116,6 +116,13 @@ class particlefilter:
 		self.step += 1
 		self.estimate()
 		self.update_marker()
+
+	def resample(self, data):
+		marker_id = data.id
+		pose = data.pose
+		# for i in range(self.num_particles):
+		# 	particle = wrand.random()
+		# 	self.particle_list.append(particle)
 		
 
 	def update_marker(self):

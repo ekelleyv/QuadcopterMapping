@@ -70,8 +70,12 @@ class DroneController(DroneVideoDisplay):
 
 	def listener(self):
 		rospy.Subscriber("/ardrone/navdata", Navdata, self.update_command)
+		rospy.Subscriber("/visualization_marker", Marker, self.got_marker)
 		# spin() simply keeps python from exiting until this node is stopped
 		rospy.spin()
+
+	def got_marker(self, data):
+		self.localize.update_marker(data)
 
 	def update_command(self, data):
 		self.last_time = time()
@@ -91,7 +95,7 @@ class DroneController(DroneVideoDisplay):
 
 		# print("Elapsed time: %f" % (time() - self.last_time))
 		avg = (time() - self.start_time)/self.steps
-		print("Average time: %f" % (avg))
+		# print("Average time: %f" % (avg))
 		self.steps += 1
 		#Define tilt as being within - and + MAX values
 

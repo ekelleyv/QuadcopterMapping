@@ -25,6 +25,9 @@ class localize:
 		self.pf.propogate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
 		self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 
+	def got_marker(self, data):
+		self.pf.resample(data)
+
 	def estimate(self):
 		return self.pf.est
 

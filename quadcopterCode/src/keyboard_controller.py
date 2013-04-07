@@ -29,6 +29,7 @@ class KeyMapping(object):
 	DecreaseAltitude = QtCore.Qt.Key.Key_F
 	Takeoff          = QtCore.Qt.Key.Key_Y
 	Land             = QtCore.Qt.Key.Key_H
+	IMU              = QtCore.Qt.Key.Key_I
 	Emergency        = QtCore.Qt.Key.Key_Space
 
 
@@ -57,6 +58,8 @@ class KeyboardController(DroneVideoDisplay):
 				controller.SendTakeoff()
 			elif key == KeyMapping.Land:
 				controller.SendLand()
+			elif key == KeyMapping.IMU:
+				controller.SendIMUBias()
 			else:
 				# Now we handle moving, notice that this section is the opposite (+=) of the keyrelease section
 				if key == KeyMapping.YawLeft:

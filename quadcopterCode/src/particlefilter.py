@@ -12,6 +12,7 @@ from walkerrandom import *
 from std_msgs.msg import *
 from visualization_msgs.msg import *
 from geometry_msgs.msg import *
+from tf import *
 
 #Coordinate frame info
 # -linear.x: move backward
@@ -30,6 +31,7 @@ class particlefilter:
 		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
 		self.fp_part = open(self.filename+"_part.txt", "w")
+		self.fp_ar = open(self.filename+"_ar.txt", "w")
 		self.num_particles = num_particles
 
 
@@ -117,13 +119,63 @@ class particlefilter:
 		self.estimate()
 		self.update_marker()
 
-	def resample(self, data):
-		marker_id = data.id
-		pose = data.pose
-		print(pose)
-		# for i in range(self.num_particles):
-		# 	particle = wrand.random()
-		# 	self.particle_list.append(particle)
+	def ar_correct(self, marker):
+		marker_id = marker.id
+		pose = marker.pose
+
+		#Convert to mm
+		m_to_mm = 1000
+		pose.x *= m_to_mm
+		pose.y *= m_to_mm
+		pose.z *= m_to_mm
+
+		pose_inv = pose.inverse()
+
+		#Is this necessary
+		pose_trans[0] = pose_inv.x
+		pose_trans[1] = pose_inv.y
+		pose_trans[2] = pose_inv.z
+
+		pose_rot[0] = pose_inv.qx
+		pose_rot[1] = pose_inv.qy
+		pose_rot[2] = pose_inv.qz
+		pose_rot[3] = pose_inv.qw
+
+		pose_inv_mat = fromTranslationRotation(pose_trans, pos_rot)
+
+		marker_name = "/marker_" + marker_id
+
+		#Get the offset of the marker from the origin
+		try:
+			(marker_trans,marker_rot) = listener.lookupTransform('/world', marker_name, rospy.Time(0))
+		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+			print("Unable to find transform")
+			return
+
+		try:
+			(base_trans,base_rot) = listener.lookupTransform('/world', marker_name, rospy.Time(0))
+		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+			print("Unable to find transform")
+			return
+
+		marker_mat = fromTranslationRotation(marker_trans, marker_rot)
+
+		#What is the correct order for the transformation matrices?
+		#TURN INTO ARDRONE_BASE_LINK
+		estimate = pose_inv_mat*marker_mat
+
+		#Take inverse of estimate, and apply it to origin to get in global space
+
+		#Upper left 3x3 matrix should be the rotation. First column is the normalized vector of heading (use atan2)
+
+		#Should I create new particles or just strongly resample the old ones? Maybe a mixture?
+		#INSERT ADJUSTMENT HERE
+
+
+		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f," % (rospy.Time(0), self.step, marker_id, estimate[0], estimate[1], estimate[2]))
+		self.fp.write("%f,%f,%f,%f,%f,%f,%f," % (pose_trans[0], pose_trans[1], pose_trans[2], pose_rot[0], pose_rot[1], pose_rot[2], pose_rot[3]))
+		self.fp.write("%f,%f,%f,%f,%f,%f,%f," % (marker_trans[0], marker_trans[1], marker_trans[2], marker_rot[0], marker_rot[1], marker_rot[2], marker_rot[3]))
+		print(estimate)
 		
 
 	def update_marker(self):

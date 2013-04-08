@@ -35,7 +35,7 @@ function [ data_obj ] = generate_figures( filename )
 	% svis_pos(data);
 	% vis_readings(data);
 	% sensor_data(data);
-	% euler_method(data);
+	euler_method(data);
 	% plot_acc(data);
 	% rotation_values(data);
 
@@ -155,18 +155,19 @@ end
 
 function [m_out] = rotate(m, rotX, rotY, rotZ)
 	rotX_mat = [1, 0, 0, 0;
-				0, cosd(rotX), -sind(rotX), 0;
-				0, sind(rotX), cosd(rotX), 0;
+				0, cosd(rotX), sind(rotX), 0;
+				0, -sind(rotX), cosd(rotX), 0;
 				0, 0, 0, 1];
-	rotY_mat = [cosd(rotY), 0, -sind(rotY), 0;
+	rotY_mat = [cosd(rotY), 0, sind(rotY), 0;
 				0, 1, 0, 0;
-				sind(rotY), 0, cosd(rotY), 0;
+				-sind(rotY), 0, cosd(rotY), 0;
 				0, 0, 0, 1];
-	rotZ_mat = [cosd(rotZ), -sind(rotZ), 0, 0;
-				sind(rotZ), cosd(rotZ), 0, 0;
+	rotZ_mat = [cosd(rotZ), sind(rotZ), 0, 0;
+				-sind(rotZ), cosd(rotZ), 0, 0;
 				0, 0, 1, 0;
 				0, 0, 0, 1];
 	m_out = rotX_mat*rotY_mat*rotZ_mat*m;
+	% m_out = rotZ_mat*rotY_mat*rotX_mat*m;
 end
 
 % So this is in the local coordinate frame.....
@@ -184,9 +185,13 @@ function [] = euler_method(data)
 		rotY = data(i, 8) - mean(data(1:10, 8));
 		rotZ = data(i, 6) - mean(data(1:10, 6));
 		global_acc(i, :) = rotate(acc_m, rotX, rotY, rotZ);
+
+		% global_acc(i, 3) = global_acc(i, 3) - convert_g(mean(data(1:10, 5)));
+		
 		global_acc(i, 1) = global_acc(i, 1) - convert_g(mean(data(1:10, 3)));
 		global_acc(i, 2) = global_acc(i, 2) - convert_g(mean(data(1:10, 4)));
 		global_acc(i, 3) = global_acc(i, 3) - convert_g(mean(data(1:10, 5)));
+
 		for j=1:3
 			vel_acc(i, j) = vel_acc(i-1, j) + global_acc(i, j)*data(i,2);
 			pos_acc(i, j) = pos_acc(i-1, j) + vel_acc(i, j)*data(i,2);

@@ -40,6 +40,7 @@ class BasicCommands(object):
 		self.pubReset   = rospy.Publisher('/ardrone/reset',Empty)
 		self.pubFlatTrim = rospy.Publisher('/ardrone/flattrim', Empty)
 		self.pubIMUBias = rospy.Publisher('/ardrone/imu_recalib', Empty)
+		self.pubToggle = rospy.Publisher('/ardrone/togglecam', Empty)
 		
 		# Allow the controller to publish to the /cmd_vel topic and thus control the drone
 		self.pubCommand = rospy.Publisher('/cmd_vel',Twist)
@@ -73,6 +74,9 @@ class BasicCommands(object):
 	def SendIMUBias(self):
 		if(self.status == DroneStatus.Landed):
 			self.pubIMUBias.publish(Empty())
+
+	def SendToggle(self):
+		self.pubToggle.publish(Empty())
 
 	def SendEmergency(self):
 		# Send an emergency (or reset) message to the ardrone driver

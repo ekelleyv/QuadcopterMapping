@@ -31,6 +31,7 @@ class KeyMapping(object):
 	Land             = QtCore.Qt.Key.Key_H
 	IMU              = QtCore.Qt.Key.Key_I
 	Emergency        = QtCore.Qt.Key.Key_Space
+	Toggle			 = QtCore.Qt.Key.Key_T
 
 
 # Extending control_gui to include keypresses
@@ -60,6 +61,8 @@ class KeyboardController(DroneVideoDisplay):
 				controller.SendLand()
 			elif key == KeyMapping.IMU:
 				controller.SendIMUBias()
+			elif key == KeyMapping.Toggle:
+				controller.SendToggle()
 			else:
 				# Now we handle moving, notice that this section is the opposite (+=) of the keyrelease section
 				if key == KeyMapping.YawLeft:

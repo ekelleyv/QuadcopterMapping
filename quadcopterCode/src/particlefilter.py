@@ -7,12 +7,15 @@ from math import *
 import numpy
 #ROS related initializations
 import os
+import roslib
 import rospy
 from walkerrandom import *
 from std_msgs.msg import *
 from visualization_msgs.msg import *
 from geometry_msgs.msg import *
 from tf import *
+from tf.transformations import *
+from tf import TransformerROS
 
 #Coordinate frame info
 # -linear.x: move backward
@@ -60,6 +63,8 @@ class particlefilter:
 		self.est_pose = Point()
 		self.line = Marker()
 		self.est_pub = rospy.Publisher('pf_pose', Point)
+		self.listener = TransformListener()
+		self.transformer = TransformerROS()
 		self.update_marker()
 
 	#Propogate particles based on accelerometer data and gyroscope-based theta
@@ -123,46 +128,58 @@ class particlefilter:
 		marker_id = marker.id
 		pose = marker.pose
 
-		#Convert to mm
-		m_to_mm = 1000
-		pose.x *= m_to_mm
-		pose.y *= m_to_mm
-		pose.z *= m_to_mm
-
-		pose_inv = pose.inverse()
-
+		pose_trans = ()
+		pose_rot = ()
 		#Is this necessary
-		pose_trans[0] = pose_inv.x
-		pose_trans[1] = pose_inv.y
-		pose_trans[2] = pose_inv.z
+		pose_trans = (pose.position.x, pose.position.y, pose.position.z)
+		pose_rot = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
 
-		pose_rot[0] = pose_inv.qx
-		pose_rot[1] = pose_inv.qy
-		pose_rot[2] = pose_inv.qz
-		pose_rot[3] = pose_inv.qw
+		# pose_mat = fromTranslationRotation(pose_trans, pos_rot)
 
-		pose_inv_mat = fromTranslationRotation(pose_trans, pos_rot)
+		marker_name = "/marker_%d" % marker_id
 
-		marker_name = "/marker_" + marker_id
+		# print("Looking for marker %s" % marker_name)
 
 		#Get the offset of the marker from the origin
 		try:
-			(marker_trans,marker_rot) = listener.lookupTransform('/world', marker_name, rospy.Time(0))
-		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-			print("Unable to find transform")
+			(marker_trans,marker_rot) = self.listener.lookupTransform('world', marker_name, rospy.Time(0))
+		except (LookupException, ConnectivityException, ExtrapolationException):
+			print("Unable to find marker transform")
 			return
 
 		try:
-			(base_trans,base_rot) = listener.lookupTransform('/world', marker_name, rospy.Time(0))
-		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-			print("Unable to find transform")
+			(base_trans,base_rot) = self.listener.lookupTransform('/ardrone/ardrone_base_link', '/ardrone/ardrone_base_bottomcam', rospy.Time(0))
+		except (LookupException, ConnectivityException, ExtrapolationException):
+			print("Unable to find ardrone transform")
 			return
 
-		marker_mat = fromTranslationRotation(marker_trans, marker_rot)
+		#Everything is in m not mm
+		pose_mat = numpy.matrix(self.transformer.fromTranslationRotation(pose_trans, pose_rot))
+		pose_mat_inv = pose_mat.getI()
+		marker_mat = numpy.matrix(self.transformer.fromTranslationRotation(marker_trans, marker_rot))
+		base_mat = numpy.matrix(self.transformer.fromTranslationRotation(base_trans, base_rot))
+		base_mat_inv = base_mat.getI()
+		# print marker_mat
+
+		origin = numpy.matrix([[0], [0], [0], [1]])
+
+		#Not quite the right transformation
+		global_mat = marker_mat*pose_mat_inv*base_mat_inv
+
+		global_trans = translation_from_matrix(global_mat)
+		global_rot = rotation_from_matrix(global_mat)
+
+		print global_rot
+
+		# print pose_mat_inv*base_mat_inv*marker_mat*origin
+		# print pose_trans
+		# print marker_trans
+		# print base_trans
+		# marker_mat = fromTranslationRotation(marker_trans, marker_rot)
 
 		#What is the correct order for the transformation matrices?
 		#TURN INTO ARDRONE_BASE_LINK
-		estimate = pose_inv_mat*marker_mat
+		# estimate = pose_inv_mat*marker_mat
 
 		#Take inverse of estimate, and apply it to origin to get in global space
 
@@ -172,10 +189,9 @@ class particlefilter:
 		#INSERT ADJUSTMENT HERE
 
 
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f," % (rospy.Time(0), self.step, marker_id, estimate[0], estimate[1], estimate[2]))
-		self.fp.write("%f,%f,%f,%f,%f,%f,%f," % (pose_trans[0], pose_trans[1], pose_trans[2], pose_rot[0], pose_rot[1], pose_rot[2], pose_rot[3]))
-		self.fp.write("%f,%f,%f,%f,%f,%f,%f," % (marker_trans[0], marker_trans[1], marker_trans[2], marker_rot[0], marker_rot[1], marker_rot[2], marker_rot[3]))
-		print(estimate)
+		# self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f," % (rospy.Time(0), self.step, marker_id, estimate[0], estimate[1], estimate[2]))
+		# self.fp.write("%f,%f,%f,%f,%f,%f,%f," % (pose_trans[0], pose_trans[1], pose_trans[2], pose_rot[0], pose_rot[1], pose_rot[2], pose_rot[3]))
+		# self.fp.write("%f,%f,%f,%f,%f,%f,%f\n" % (marker_trans[0], marker_trans[1], marker_trans[2], marker_rot[0], marker_rot[1], marker_rot[2], marker_rot[3]))
 		
 
 	def update_marker(self):

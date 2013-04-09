@@ -76,6 +76,7 @@ class BasicCommands(object):
 			self.pubIMUBias.publish(Empty())
 
 	def SendToggle(self):
+		print("Publishing toggle")
 		self.pubToggle.publish(Empty())
 
 	def SendEmergency(self):

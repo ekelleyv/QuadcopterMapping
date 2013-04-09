@@ -48,6 +48,7 @@ class DroneController(DroneVideoDisplay):
 		self.start_time = time()
 		self.last_time = time()
 		self.steps = 1
+		self.br = tf.TransformBroadcaster()
 
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 
@@ -75,12 +76,13 @@ class DroneController(DroneVideoDisplay):
 		rospy.spin()
 
 	def got_marker(self, data):
-		self.localize.update_marker(data)
+		self.localize.ar_correct(data)
 
 	def update_command(self, data):
 		self.last_time = time()
 		self.localize.update(data)
 		self.pose = self.localize.estimate()
+		self.br.sendTransform((0, 0, 0), tf.transformations.quaternion_from_euler(0, 0, 0), rospy.Time(0), "/ardrone/ardrone_base_link", "/world")
 
 		distance = self.get_distance()
 		angle = self.get_angle_diff()

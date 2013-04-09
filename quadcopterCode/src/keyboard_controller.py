@@ -49,7 +49,6 @@ class KeyboardController(DroneVideoDisplay):
 
 	def keyPressEvent(self, event):
 		key = event.key()
-
 		# If we have constructed the drone controller and the key is not generated from an auto-repeating key
 		if controller is not None and not event.isAutoRepeat():
 			# Handle the important cases first!

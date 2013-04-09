@@ -195,13 +195,13 @@ void Drone::updateState() {
 	else if (_updateType == 1) {
 		_x = _xt;
 		_y = _yt;
-		_alt = _altn;
+		_alt = _altt;
 		_u = _ut;
 		_v = _vt;
 		_w = _wt;
 		_phi = _phit;
 		_theta = _thetat;
-		_psi = _psin;
+		_psi = _psit;
 		lastUpdateTime = lastTumTime;
 	}
 	else if (_updateType == 2) {
@@ -209,13 +209,13 @@ void Drone::updateState() {
 		lastUpdateTime = lastTumTime;
 		_x = _x + _ut*dt;
 		_y = _y + _vt*dt;
-		_alt = _altn;
+		_alt = _altt;
 		_u = _ut;
 		_v = _vt;
 		_w = _wt;
 		_phi = _phit;
 		_theta = _thetat;
-		_psi = _psin;
+		_psi = _psit;
 	}
 	else if (_updateType == 3) {
 		double dt = (lastStateTime - lastUpdateTime).toSec();

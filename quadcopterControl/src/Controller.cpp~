@@ -16,11 +16,11 @@
 
 /*Controller constructor (with default values) */
 Controller::Controller() {
-	_kpX = -0.00059;
-	_kdX = -0.0025;
+	_kpX = 0.001;
+	_kdX = 2.68e-6;
 	_kiX = 0;
-	_kpY = 0.00015;
-	_kdY = 1.55e-6;
+	_kpY = 0.001;
+	_kdY = 1.17e-6;
 	_kiY = 0;
 	_kpA = 0.19;
 	_kdA = 0.0056;
@@ -106,6 +106,21 @@ double Controller::angleDiff(double a, double b) {
 	return diff;
 }
 
+/*Take difference between two angles while keeping their difference between -180 and 180degees*/
+double Controller::angleSum(double a, double b) {
+	double diff = a+b;
+
+	while (diff > 180) {
+		diff = diff-360;
+	}
+	while (diff < -180) {
+		diff = diff+360;
+	}
+
+	return diff;
+}
+
+
 /*Reset control values*/
 void Controller::resetController() {
 	_totalXErr = 0;
@@ -122,6 +137,34 @@ void Controller::resetController() {
 	_phiDes = 0;
 	_psiDotDes = 0;
 	_zDotDes = 0;
+}
+
+
+void Controller::resetXController() {
+	_totalXErr = 0;
+	_lastXErr = 0;
+	_thetaDes = 0;
+}
+
+
+void Controller::resetYController() {
+	_totalYErr = 0;
+	_lastYErr = 0;
+	_phiDes = 0;
+}
+
+
+void Controller::resetAController() {
+	_totalAErr = 0;
+	_lastAErr = 0;
+	_zDotDes = 0;
+}
+
+
+void Controller::resetYawController() {
+	_totalTErr = 0;
+	_lastTErr = 0;
+	_psiDotDes = 0;
 }
 
 

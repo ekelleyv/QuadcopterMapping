@@ -195,7 +195,7 @@ void Drone::updateState() {
 	else if (_updateType == 1) {
 		_x = _xt;
 		_y = _yt;
-		_alt = _altn;
+		_alt = _altt;
 		_u = _ut;
 		_v = _vt;
 		_w = _wt;

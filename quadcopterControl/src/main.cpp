@@ -66,6 +66,7 @@ std::fstream settingsLog; //settings of the trial
 std::fstream navLog; //name of log file
 std::fstream predictLog; //log predicted things
 std::fstream controlLog; //log control commands
+int updateType = 2; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata
 long programStart; //time of program start
 struct tm *now; //beginning of programming
 Drone* droneP;
@@ -103,10 +104,10 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 	//log all variables
 	navLog << "time= " << currentTime << " messageTime= " << msg->header.stamp << " droneTime= " << msg->tm << " lastStateTime= " << droneP->lastStateTime << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->state << " originalPosition= " << droneP->_x << " " << droneP->_y << " rot= " << msg->rotX << " " << msg->rotY << " " << msg->rotZ << " altd= " << msg->altd << " linearV= " << msg->vx << " " << msg->vy << " " << msg->vz << " " << " linearAccel= " << msg->ax << " " << msg->ay << " " << msg->az << " mag= " << msg->magX << " " << msg->magY << " " << msg->magZ << " pressure= " << msg->pressure << " temp= " << msg->temp << " windSpeed= " << msg->wind_speed << " windAngle= " << msg->wind_angle << " windCompAngle= " << msg->wind_comp_angle;
 
-	droneP->updateState(msg);
-	//droneP->printState();
+	droneP->updateNavState(msg);
+	droneP->updateState();
 
-	navLog << " newPosition= " << droneP->_x << " " << droneP->_y << "\n";
+	navLog << " newPosition= " << droneP->_x << " " << droneP->_y << " angles= " << droneP->_theta << " " << droneP->_phi << " " << droneP->_psi << " altitude= " << droneP->_alt << " velocities= " << droneP->_u << " " << droneP->_v << " " << droneP->_w << " accelerations= " << droneP->_udot << " " << droneP->_vdot << " " << droneP->_wdot << "\n";
 }
 
 /* 
@@ -117,8 +118,13 @@ void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
    	long end = myclock();
         long currentTime = (end-programStart)/1000000.0;
 
+	droneP->updateTumState(msg);
+	droneP->updateState();
+
 	//log all variables
-	predictLog << "time= " << currentTime << " messageTime= " << msg->header.stamp << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->droneState << " pos = " << msg->x << " " << msg-> y << " " << msg->z << " linearV= " << msg->dx << " " << msg->dy << " " << msg->dz << " rot= " << msg->pitch << " " << msg->roll << " " << msg->yaw << " dyaw= " << msg->dyaw << " scale= " << msg->scale << " ptamState= " << msg->ptamState << " scaleAccuracy= " << msg->scaleAccuracy << "\n";
+	predictLog << "time= " << currentTime << " messageTime= " << msg->header.stamp.toSec() << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->droneState << " pos= " << msg->x << " " << msg-> y << " " << msg->z << " linearV= " << msg->dx << " " << msg->dy << " " << msg->dz << " rot= " << msg->pitch << " " << msg->roll << " " << msg->yaw << " dyaw= " << msg->dyaw << " scale= " << msg->scale << " ptamState= " << msg->ptamState << " scaleAccuracy= " << msg->scaleAccuracy;
+
+	predictLog << " newPosition= " << droneP->_x << " " << droneP->_y << " angles= " << droneP->_theta << " " << droneP->_phi << " " << droneP->_psi << " altitude= " << droneP->_alt << " velocities= " << droneP->_u << " " << droneP->_v << " " << droneP->_w << " accelerations= " << droneP->_udot << " " << droneP->_vdot << " " << droneP->_wdot << "\n";
 }
 
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg) {
@@ -157,7 +163,7 @@ void imgCB(const sensor_msgs::ImageConstPtr& msg) {
 	const std::string tmp = time.str();
 	const char* timeStamp = tmp.c_str();
 
-	cvSaveImage(timeStamp, img);
+	//cvSaveImage(timeStamp, img);
 }
 
 /*
@@ -258,15 +264,15 @@ ROS_INFO("OK3");
 	velocity.angular.y = 0;
 	velocity.angular.z = 0;
 ROS_INFO("OK4");
-	cmd_vel.publish(velocity);
+	//cmd_vel.publish(velocity);
 ROS_INFO("OK5");
-	ros::spinOnce(); //reset velocity
+	//ros::spinOnce(); //reset velocity
 	//ros::Subscriber cmdvel_sub = n.subscribe("/cmd_vel", 1000, cmdVelCB);
 ROS_INFO("OK6");
 	/***INITIALIZE DRONE STUFF***/
 	ROS_INFO("Initialize drone stuff...");
 	//initialize desired waypoints
-	int numPoints = 1;
+	int numPoints = 6;
 	int currentWaypoint = 0;
 	//assume units of mm
 	double* xDes = new double[numPoints];
@@ -277,11 +283,81 @@ ROS_INFO("OK6");
 	for (int i = 0; i < numPoints; i++) {
 		xDes[i] = 0;
 		yDes[i] = 0;
-		tDes[i] = 0;
-		aDes[i] = 0;
+		tDes[i] = -180;
+		aDes[i] = 700;
 	}
 
-	xDes[0] = -500;
+	/*xDes[0] = 500;
+	xDes[1] = 1000;
+	xDes[2] = 1200;
+	xDes[3] = 1700;*/
+
+	/*yDes[0] = -600;
+	yDes[1] = -200;
+	yDes[2] = 400;
+	yDes[3] = 800;*/
+
+	//square
+	/*xDes[0] = 0;
+	xDes[1] = 1000;
+	xDes[2] = 1000;
+	xDes[3] = 0;
+	xDes[4] = 0;
+
+	yDes[0] = 0;
+	yDes[1] = 0;
+	yDes[2] = -600;
+	yDes[3] = -600;
+	yDes[4] = 0;*/
+
+	//sine wave
+	/*xDes[0] = 50;
+	xDes[1] = 450;
+	xDes[2] = 850;
+	xDes[3] = 1250;
+	xDes[4] = 1650;
+	xDes[5] = 2050;
+	xDes[6] = 2450;
+
+	yDes[0] = 400;
+	yDes[1] = 800;
+	yDes[2] = 400;
+	yDes[3] = -400;
+	yDes[4] = -800;
+	yDes[5] = -400;
+	yDes[6] = 0;*/
+
+	//sine2
+	xDes[0] = 50;
+	xDes[1] = 300;
+	xDes[2] = 500;
+	xDes[3] = 800;
+	xDes[4] = 1100;
+	xDes[5] = 1400;
+	xDes[6] = 1700;
+
+	aDes[0] = 1200;
+	aDes[1] = 1500;
+	aDes[2] = 1200;
+	aDes[3] = 1000;
+	aDes[4] = 800;
+	aDes[5] = 1000;
+	aDes[6] = 1200;
+
+	//star
+	/*yDes[0] = 600;
+	yDes[1] = -600;
+	yDes[2] = 100;
+	yDes[3] = 0;
+	yDes[4] = -100;
+	yDes[5] = 600;
+
+	xDes[0] = 0;
+	xDes[1] = 0;
+	xDes[2] = -400;
+	xDes[3] = 400;
+	xDes[4] = -400;
+	xDes[5] = 0;*/
 
 
 	//log waypoints
@@ -308,7 +384,7 @@ ROS_INFO("OK6");
 	}*/
 
 	//initalize drone
-	droneP = new Drone(0.0, 0.0, 0.0);
+	droneP = new Drone(0.0, 0.0, 0.0, updateType);
 	//droneP = new Drone(0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 1.5, 2.5, 3.5, 1.8, 2.8, 3.8, 1.9, 2.9, 3.9);
 	droneP->setMaximums(maxAngle, maxZDot, maxPsiDot);
 
@@ -316,8 +392,8 @@ ROS_INFO("OK6");
 	settingsLog << "Controlgains: " << "xPID= " << droneP->_droneController->_kpX << " " << droneP->_droneController->_kdX << " " << droneP->_droneController->_kiX << " yPID= " << droneP->_droneController->_kpY << " " << droneP->_droneController->_kdY << " " << droneP->_droneController->_kiY << " yawPID= " << droneP->_droneController->_kpT << " " << droneP->_droneController->_kdT << " " << droneP->_droneController->_kiT << " zPID= " << droneP->_droneController->_kpA << " " << droneP->_droneController->_kdA << " " << droneP->_droneController->_kiA << "\n";
 
 	//log maximums
-	settingsLog << "MaxAngle= " << maxAngle << "MaxZDot= " << maxZDot << "MaxPsiDot= " << maxPsiDot << "\n";
-std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << " " << droneP->_maxZDot << std::endl;
+	settingsLog << "MaxAngle= " << droneP->_maxAngle << "MaxZDot= " << droneP->_maxZDot << "MaxPsiDot= " << droneP->_maxPsiDot << "\n";
+std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << " " << droneP->_maxZDot << " updateType= " << updateType << std::endl;
 
 //test drone library
 droneP->printState();
@@ -331,12 +407,12 @@ droneP->printState();*/
 	ROS_INFO("Taking off..");	
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
 	while (takeoff.getNumSubscribers() < 1) { ;}
-	takeoff.publish(empty);
+	//cmd_vel.publish(velocity);
+	//takeoff.publish(empty);
 	ros::spinOnce();
 	ros::Duration(5).sleep(); // sleep to allow the drone to take off
 
 	int32_t controlFlag = 0;
-
 
 	/***BEGIN CONTROL LOOP***/
 	bool cam = false;
@@ -344,10 +420,10 @@ droneP->printState();*/
 	ros::Time hoverBegin;
 
 	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
-	double angleThres = 2;
-	double distThres = 20; 
-	double zThres = 5;
-	double hoverTime = 5;
+	double angleThres = 5;
+	double distThres = 100; 
+	double zThres = 50;
+	double hoverTime = 0.5;
 	settingsLog << "hoverTime= " << hoverTime << " angleThreshold= " << angleThres << " distThreshold= " << distThres << " zThreshold= " << zThres << "\n";
 
 	ROS_INFO("Begin control loop...");
@@ -380,14 +456,16 @@ droneP->printState();*/
 			}
 */
 
-/*		if ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres) ||
-		(abs(droneP->_alt - aDes[currentWaypoint]) > distThres) ||
-		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) {*/
-		if ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) && (hover == false)) {
+		(abs(droneP->_alt - aDes[currentWaypoint]) > zThres) ||
+		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {
+		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
 			//calculate the control signal
 			//ROS_INFO("Calculating control signal...");
 			droneP->calculateControl(xDes[currentWaypoint], yDes[currentWaypoint], aDes[currentWaypoint], tDes[currentWaypoint]);
+		}
 
 		//get elapsed time
    		long end = myclock();
@@ -401,18 +479,30 @@ droneP->printState();*/
 			//log control 
 		controlLog << " translatedControlSignal= " << droneP->_droneController->_thetaDes << " " << droneP->_droneController->_phiDes << " " << droneP->_droneController->_psiDotDes << " " << droneP->_droneController->_zDotDes;
 
-			if (abs(droneP->_x - xDes[currentWaypoint]) > distThres) {
+		if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		(abs(droneP->_y - yDes[currentWaypoint]) > distThres) ||
+		(abs(droneP->_alt - aDes[currentWaypoint]) > zThres) ||
+		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {
+		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
+			if ( (abs(droneP->_x - xDes[currentWaypoint]) > distThres) ) {
+				std::cout << "x control" << std::endl;
 				velocity.linear.x = droneP->_droneController->_thetaDes;
 			}
-	/*		if (abs(droneP->_y - yDes[currentWaypoint]) > distThres) {
+			if ( (abs(droneP->_y - yDes[currentWaypoint]) > distThres) ) {
+				std::cout << "y control" << std::endl;
+				//remember that adrone_autonomy will flip the phides sign
 				velocity.linear.y = droneP->_droneController->_phiDes;
 			}
+	
 			if (abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres) {
+				std::cout << "yaw control" << std::endl;
 				velocity.angular.z = droneP->_droneController->_psiDotDes;
-			}*/
-		/*	if (abs(droneP->_alt - aDes[currentWaypoint]) > distThres) {
+			}
+			if (abs(droneP->_alt - aDes[currentWaypoint]) > zThres) {
+				std::cout << "z control" << std::endl;
 				velocity.linear.z = droneP->_droneController->_zDotDes;
-			}*/
+			}
 		}
 
 		//if already at goal, begin to hover
@@ -452,14 +542,15 @@ droneP->printState();*/
 		}
 
 		//get elapsed time
-   		long end = myclock();
-        	long currentTime = (end-programStart)/1000000.0;
+   		end = myclock();
+        	currentTime = (end-programStart)/1000000.0;
 
-		controlLog << " sentMessageTime= " << ros::Time::now() << " sentLinearCommand= " << velocity.linear.x << " " << velocity.linear.y << " " << velocity.linear.z << " " << " sentAngularCommand= " << velocity.angular.x << " " << velocity.angular.y << " " << velocity.angular.z << "\n";
+		controlLog << " sentMessageTime= " << ros::Time::now().toSec() << " " << 0 << " sentLinearCommand= " << velocity.linear.x << " " << velocity.linear.y << " " << velocity.linear.z << " " << " sentAngularCommand= " << velocity.angular.x << " " << velocity.angular.y << " " << velocity.angular.z << "\n";
 
 		//send appropriate control signal
 		cmd_vel.publish(velocity);
-std::cout << "THETADES= " << velocity.linear.x << std::endl;
+std::cout << " currentWaypoint= " << currentWaypoint << " thetades= " << velocity.linear.x << " phides= " << velocity.linear.y << " X= " << droneP->_x << " Y= " << droneP->_y << " Z= " << droneP->_alt << " psi= " << droneP->_psi << " hover= " << hover << std::endl;
+settingsLog << "thetades= " << velocity.linear.x << " phides= " << velocity.linear.y << " X= " << droneP->_x << " Y= " << droneP->_y << " Z= " << droneP->_alt << " psi= " << droneP->_psi << " hover= " << hover << "\n";
 		ros::spinOnce();
 
 	}
@@ -475,13 +566,13 @@ std::cout << "THETADES= " << velocity.linear.x << std::endl;
 	cvDestroyWindow("view");
 	navLog.close();
 
-	//free memory
+	/*//free memory
 	droneP->~Drone();
-	delete droneP;
+	//delete droneP;
 	delete [] xDes;
 	delete [] yDes;
 	delete [] aDes;
-	delete [] tDes; 
+	delete [] tDes; */
 
 	return 0;
 

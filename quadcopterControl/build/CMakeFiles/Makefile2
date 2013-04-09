@@ -211,7 +211,7 @@ clean: CMakeFiles/clean-test-results.dir/clean
 CMakeFiles/quadcopter_control.dir/all: CMakeFiles/rosbuild_precompile.dir/all
 	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/depend
 	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/build
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles  1
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles  1 2 3 4
 	@echo "Built target quadcopter_control"
 .PHONY : CMakeFiles/quadcopter_control.dir/all
 
@@ -221,7 +221,7 @@ all: CMakeFiles/quadcopter_control.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/quadcopter_control.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 1
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 4
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/quadcopter_control.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 0
 .PHONY : CMakeFiles/quadcopter_control.dir/rule
@@ -237,6 +237,76 @@ CMakeFiles/quadcopter_control.dir/clean:
 
 # clean rule for target.
 clean: CMakeFiles/quadcopter_control.dir/clean
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/quadcopter_datalog.dir
+
+# All Build rule for target.
+CMakeFiles/quadcopter_datalog.dir/all: CMakeFiles/rosbuild_precompile.dir/all
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/depend
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/build
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles  5
+	@echo "Built target quadcopter_datalog"
+.PHONY : CMakeFiles/quadcopter_datalog.dir/all
+
+# Include target in all.
+all: CMakeFiles/quadcopter_datalog.dir/all
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/quadcopter_datalog.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 1
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/quadcopter_datalog.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 0
+.PHONY : CMakeFiles/quadcopter_datalog.dir/rule
+
+# Convenience name for target.
+quadcopter_datalog: CMakeFiles/quadcopter_datalog.dir/rule
+.PHONY : quadcopter_datalog
+
+# clean rule for target.
+CMakeFiles/quadcopter_datalog.dir/clean:
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/clean
+.PHONY : CMakeFiles/quadcopter_datalog.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/quadcopter_datalog.dir/clean
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/quadcopter_systemid.dir
+
+# All Build rule for target.
+CMakeFiles/quadcopter_systemid.dir/all: CMakeFiles/rosbuild_precompile.dir/all
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/depend
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/build
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles  6
+	@echo "Built target quadcopter_systemid"
+.PHONY : CMakeFiles/quadcopter_systemid.dir/all
+
+# Include target in all.
+all: CMakeFiles/quadcopter_systemid.dir/all
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/quadcopter_systemid.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 1
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/quadcopter_systemid.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/build/CMakeFiles 0
+.PHONY : CMakeFiles/quadcopter_systemid.dir/rule
+
+# Convenience name for target.
+quadcopter_systemid: CMakeFiles/quadcopter_systemid.dir/rule
+.PHONY : quadcopter_systemid
+
+# clean rule for target.
+CMakeFiles/quadcopter_systemid.dir/clean:
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/clean
+.PHONY : CMakeFiles/quadcopter_systemid.dir/clean
+
+# clean rule for target.
+clean: CMakeFiles/quadcopter_systemid.dir/clean
 .PHONY : clean
 
 #=============================================================================

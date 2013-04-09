@@ -13,7 +13,7 @@ rosrun tum_ardrone drone_gui
 ./quadcopterControl/quadcopter_control
 
 To collect system ID data (with manual control):
-rosrun ardrone_autonomy ardrone_driver _realtime_navdata:=True _navdata_demo:=0 _looprate:=200
+rosrun ardrone_autonomy ardrone_driver _realtime_navdata:=True _navdata_demo:=0
 cd ./quadcopterControl/bin/quadcopter_datalog
 cd ./control_scripts/takeoff
 rostopic pub /cmd_vel geometry_msgs/Twist '[x, y, z]' '[x, y, z]' - this is between -1 and 1

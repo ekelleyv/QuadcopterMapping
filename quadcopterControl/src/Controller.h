@@ -24,7 +24,12 @@ public:
 
 	//PUBLIC FUNCTIONS
 	double angleDiff(double a, double b);
+	double angleSum(double a, double b);
 	void resetController();
+	void resetXController();
+	void resetYController();
+	void resetAController();
+	void resetYawController();
 	void printState();
 
 	//controller gains

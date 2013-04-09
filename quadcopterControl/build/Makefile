@@ -174,6 +174,32 @@ quadcopter_control/fast:
 .PHONY : quadcopter_control/fast
 
 #=============================================================================
+# Target rules for targets named quadcopter_datalog
+
+# Build rule for target.
+quadcopter_datalog: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 quadcopter_datalog
+.PHONY : quadcopter_datalog
+
+# fast build rule for target.
+quadcopter_datalog/fast:
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/build
+.PHONY : quadcopter_datalog/fast
+
+#=============================================================================
+# Target rules for targets named quadcopter_systemid
+
+# Build rule for target.
+quadcopter_systemid: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 quadcopter_systemid
+.PHONY : quadcopter_systemid
+
+# fast build rule for target.
+quadcopter_systemid/fast:
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/build
+.PHONY : quadcopter_systemid/fast
+
+#=============================================================================
 # Target rules for targets named rosbuild_precompile
 
 # Build rule for target.
@@ -304,6 +330,51 @@ tests/fast:
 .PHONY : tests/fast
 
 # target to build an object file
+src/Controller.o:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/Controller.o
+.PHONY : src/Controller.o
+
+# target to preprocess a source file
+src/Controller.i:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/Controller.i
+.PHONY : src/Controller.i
+
+# target to generate assembly for a file
+src/Controller.s:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/Controller.s
+.PHONY : src/Controller.s
+
+# target to build an object file
+src/Drone.o:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/Drone.o
+.PHONY : src/Drone.o
+
+# target to preprocess a source file
+src/Drone.i:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/Drone.i
+.PHONY : src/Drone.i
+
+# target to generate assembly for a file
+src/Drone.s:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/Drone.s
+.PHONY : src/Drone.s
+
+# target to build an object file
+src/functions.o:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/functions.o
+.PHONY : src/functions.o
+
+# target to preprocess a source file
+src/functions.i:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/functions.i
+.PHONY : src/functions.i
+
+# target to generate assembly for a file
+src/functions.s:
+	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/functions.s
+.PHONY : src/functions.s
+
+# target to build an object file
 src/main.o:
 	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/main.o
 .PHONY : src/main.o
@@ -318,6 +389,36 @@ src/main.s:
 	$(MAKE) -f CMakeFiles/quadcopter_control.dir/build.make CMakeFiles/quadcopter_control.dir/src/main.s
 .PHONY : src/main.s
 
+# target to build an object file
+src/recordData.o:
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/src/recordData.o
+.PHONY : src/recordData.o
+
+# target to preprocess a source file
+src/recordData.i:
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/src/recordData.i
+.PHONY : src/recordData.i
+
+# target to generate assembly for a file
+src/recordData.s:
+	$(MAKE) -f CMakeFiles/quadcopter_datalog.dir/build.make CMakeFiles/quadcopter_datalog.dir/src/recordData.s
+.PHONY : src/recordData.s
+
+# target to build an object file
+src/systemID.o:
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/src/systemID.o
+.PHONY : src/systemID.o
+
+# target to preprocess a source file
+src/systemID.i:
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/src/systemID.i
+.PHONY : src/systemID.i
+
+# target to generate assembly for a file
+src/systemID.s:
+	$(MAKE) -f CMakeFiles/quadcopter_systemid.dir/build.make CMakeFiles/quadcopter_systemid.dir/src/systemID.s
+.PHONY : src/systemID.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -331,6 +432,8 @@ help:
 	@echo "... clean-test-results"
 	@echo "... edit_cache"
 	@echo "... quadcopter_control"
+	@echo "... quadcopter_datalog"
+	@echo "... quadcopter_systemid"
 	@echo "... rebuild_cache"
 	@echo "... rosbuild_precompile"
 	@echo "... rosbuild_premsgsrvgen"
@@ -342,9 +445,24 @@ help:
 	@echo "... test-results"
 	@echo "... test-results-run"
 	@echo "... tests"
+	@echo "... src/Controller.o"
+	@echo "... src/Controller.i"
+	@echo "... src/Controller.s"
+	@echo "... src/Drone.o"
+	@echo "... src/Drone.i"
+	@echo "... src/Drone.s"
+	@echo "... src/functions.o"
+	@echo "... src/functions.i"
+	@echo "... src/functions.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/recordData.o"
+	@echo "... src/recordData.i"
+	@echo "... src/recordData.s"
+	@echo "... src/systemID.o"
+	@echo "... src/systemID.i"
+	@echo "... src/systemID.s"
 .PHONY : help
 
 

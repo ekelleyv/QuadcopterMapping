@@ -77,7 +77,7 @@ class BasicCommands(object):
 
 	def SendToggle(self):
 		print("Publishing toggle")
-		self.pubToggle.publish(Empty())
+		rospy.ServiceProxy('/ardrone/togglecam')
 
 	def SendEmergency(self):
 		# Send an emergency (or reset) message to the ardrone driver

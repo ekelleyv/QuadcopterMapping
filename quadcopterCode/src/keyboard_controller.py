@@ -36,7 +36,7 @@ class KeyMapping(object):
 
 # Extending control_gui to include keypresses
 class KeyboardController(DroneVideoDisplay):
-	def __init__(self):
+	def __init__(self, cmd):
 		super(KeyboardController,self).__init__()
 		
 		self.pitch = 0
@@ -46,22 +46,23 @@ class KeyboardController(DroneVideoDisplay):
 
 		self.linear_gain = .2
 		self.angular_gain = .5
+		self.cmd = cmd
 
 	def keyPressEvent(self, event):
 		key = event.key()
 		# If we have constructed the drone controller and the key is not generated from an auto-repeating key
-		if controller is not None and not event.isAutoRepeat():
+		if self.cmd is not None and not event.isAutoRepeat():
 			# Handle the important cases first!
 			if key == KeyMapping.Emergency:
-				controller.SendEmergency()
+				self.cmd.SendEmergency()
 			elif key == KeyMapping.Takeoff:
-				controller.SendTakeoff()
+				self.cmd.SendTakeoff()
 			elif key == KeyMapping.Land:
-				controller.SendLand()
+				self.cmd.SendLand()
 			elif key == KeyMapping.IMU:
-				controller.SendIMUBias()
+				self.cmd.SendIMUBias()
 			elif key == KeyMapping.Toggle:
-				controller.SendToggle()
+				self.cmd.SendToggle()
 			else:
 				# Now we handle moving, notice that this section is the opposite (+=) of the keyrelease section
 				if key == KeyMapping.YawLeft:
@@ -85,14 +86,14 @@ class KeyboardController(DroneVideoDisplay):
 					self.z_velocity += -self.linear_gain 
 
 			# finally we set the command to be sent. The controller handles sending this at regular intervals
-			controller.SetCommand(self.roll, self.pitch, self.yaw_velocity, self.z_velocity)
+			self.cmd.SetCommand(self.roll, self.pitch, self.yaw_velocity, self.z_velocity)
 
 
 	def keyReleaseEvent(self,event):
 		key = event.key()
 
 		# If we have constructed the drone controller and the key is not generated from an auto-repeating key
-		if controller is not None and not event.isAutoRepeat():
+		if self.cmd is not None and not event.isAutoRepeat():
 			# Note that we don't handle the release of emergency/takeoff/landing keys here, there is no need.
 			# Now we handle moving, notice that this section is the opposite (-=) of the keypress section
 			if key == KeyMapping.YawLeft:
@@ -116,7 +117,7 @@ class KeyboardController(DroneVideoDisplay):
 				self.z_velocity -= -self.linear_gain 
 
 			# finally we set the command to be sent. The controller handles sending this at regular intervals
-			controller.SetCommand(self.roll, self.pitch, self.yaw_velocity, self.z_velocity)
+			self.cmd.SetCommand(self.roll, self.pitch, self.yaw_velocity, self.z_velocity)
 
 
 
@@ -128,8 +129,8 @@ if __name__=='__main__':
 
 	# Now we construct our Qt Application and associated controllers and windows
 	app = QtGui.QApplication(sys.argv)
-	controller = BasicCommands()
-	display = KeyboardController()
+	cmd = BasicCommands()
+	display = KeyboardController(cmd)
 
 	display.show()
 

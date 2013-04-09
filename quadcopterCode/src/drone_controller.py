@@ -40,7 +40,7 @@ ANGULAR_GAIN = .1 #
 
 
 class DroneController(DroneVideoDisplay):
-	def __init__(self):
+	def __init__(self, cmd):
 		# self.cmd = BasicCommands()
 		self.localize = localize()
 		self.pose = particle(self)
@@ -50,9 +50,13 @@ class DroneController(DroneVideoDisplay):
 		self.steps = 1
 		self.br = tf.TransformBroadcaster()
 
+		self.cmd = cmd
+
 		self.waypoints = waypoints("/home/ekelley/ros_workspace/sandbox/QuadcopterMapping/quadcopterCode/data/waypoints.txt")
 
 		self.current_waypoint = self.waypoints.get_waypoint()
+
+		flag = raw_input("Start?")
 
 
 	def get_distance(self):
@@ -101,6 +105,11 @@ class DroneController(DroneVideoDisplay):
 		self.steps += 1
 		#Define tilt as being within - and + MAX values
 
+		if ((time() - self.start_time > 5) and (time() - self.start_time < 10)):
+			print("TURNING")
+			self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
+		else:
+			self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
 		#SetCommand
 		# if (self.start):
 		# 	self.cmd.SendTakeoff()
@@ -110,7 +119,8 @@ class DroneController(DroneVideoDisplay):
 
 def main():
 	rospy.init_node("controller")
-	controller = DroneController()
+	cmd = BasicCommands()
+	controller = DroneController(cmd)
 	run = raw_input("Press any key to run:")
 
 	print "Running"

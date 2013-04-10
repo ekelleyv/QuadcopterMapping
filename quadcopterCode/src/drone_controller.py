@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-#What of this can I get rid of?
+# drone_controller.py
+# Ed Kelley
+# Senior thesis, 2012-2013
 
 import roslib; roslib.load_manifest('quadcopterCode')
 import rospy
@@ -40,7 +42,7 @@ ANGULAR_GAIN = .1 #
 
 
 class DroneController(DroneVideoDisplay):
-	def __init__(self, cmd):
+	def __init__(self, cmd = None):
 		# self.cmd = BasicCommands()
 		self.localize = localize()
 		self.pose = particle(self)
@@ -56,15 +58,15 @@ class DroneController(DroneVideoDisplay):
 
 		self.current_waypoint = self.waypoints.get_waypoint()
 
-		flag = raw_input("Start?")
-
-
+	#Return Euclidean Distance
 	def get_distance(self):
 		return sqrt((self.current_waypoint.x - self.pose.x)**2 + (self.current_waypoint.y - self.pose.y)**2 + (self.current_waypoint.y - self.pose.y)**2)
 
+	#Get clamped angle difference
 	def get_angle_diff(self):
 		return abs(self.clamp_angle(self.current_waypoint.theta - self.pose.theta))
 
+	#Clamp angle between -180 and 180
 	def clamp_angle(self, angle):
 		if (angle > 180):
 			return angle - 360
@@ -73,15 +75,18 @@ class DroneController(DroneVideoDisplay):
 		else:
 			return angle
 
+	#Recieve data from ROS msgs
 	def listener(self):
 		rospy.Subscriber("/ardrone/navdata", Navdata, self.update_command)
 		rospy.Subscriber("/visualization_marker", Marker, self.got_marker)
 		# spin() simply keeps python from exiting until this node is stopped
 		rospy.spin()
 
+	#Decected marker via ar_pose
 	def got_marker(self, data):
 		self.localize.ar_correct(data)
 
+	#Update localization
 	def update_command(self, data):
 		self.last_time = time()
 		self.localize.update(data)
@@ -105,16 +110,21 @@ class DroneController(DroneVideoDisplay):
 		self.steps += 1
 		#Define tilt as being within - and + MAX values
 
-		if ((time() - self.start_time > 5) and (time() - self.start_time < 10)):
-			print("TURNING")
-			self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
-		else:
-			self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
+		# if ((time() - self.start_time > 5) and (time() - self.start_time < 10)):
+		# 	print("TURNING")
+		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
+		# else:
+		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
 		#SetCommand
 		# if (self.start):
+		# 	print("Taking off")
+		# 	if (self.cmd.status == DroneStatus.Emergency):
+		# 		print("Reseting Drone");
+		# 		self.cmd.SendEmergency()
 		# 	self.cmd.SendTakeoff()
-		# 	self.start = false
-		# elif (self.status == DroneStatus.Flying or self.status == DroneStatus.GotoHover or self.status == DroneStatus.Hovering):
+		# 	self.start = False
+		# elif (self.cmd.status == DroneStatus.Flying or self.cmd.status == DroneStatus.GotoHover or self.cmd.status == DroneStatus.Hovering):
+		# 	print("Flying")
 		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=0,z_velocity=0)
 
 def main():

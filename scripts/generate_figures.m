@@ -1,3 +1,7 @@
+% generate_figures.m
+% Ed Kelley
+% Senior thesis, 2012-2013
+
 % 'self.step'
 % 'delta_t'
 % 'x_acc'
@@ -29,17 +33,33 @@
 
 function [ data_obj ] = generate_figures( filename )
 	data_obj = importdata(filename, ',', 1);
+
+	ar_filename = strcat(filename(1:end-4), '_ar.txt')
+	data_ar = importdata(ar_filename, ',');
+
 	data = data_obj.data;
 	data(2:end, :);
 	% acc_pos(data);
-	% svis_pos(data);
+	vis_pos(data);
 	% vis_readings(data);
 	% sensor_data(data);
 	euler_method(data);
 	% plot_acc(data);
 	% rotation_values(data);
 
+	ar_pos(data_ar);
 
+
+
+
+end
+
+function [] = ar_pos(data_ar)
+	figure;
+	hold on;
+	axis equal;
+	plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
+	hold off;
 end
 
 function [] = rotation_values(data)

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
+# keyboard_controller.py
+# Ed Kelley
+# Senior thesis, 2012-2013
+
 # Adapted from:
 # The Keyboard Controller Node for the tutorial "Up and flying with the AR.Drone and ROS | Getting Started"
 # https://github.com/mikehamer/ardrone_tutorials
 
-# This controller extends the base DroneVideoDisplay class, adding a keypress handler to enable keyboard control of the drone
 
-# Import the ROS libraries, and load the manifest file which through <depend package=... /> will give us access to the project dependencies
 import roslib; roslib.load_manifest('quadcopterCode')
 import rospy
 

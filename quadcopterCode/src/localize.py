@@ -15,7 +15,7 @@ from visualization_msgs.msg import *
 class localize:
 	def __init__(self):
 		self.time = time.time()
-		self.pf = particlefilter()
+		self.pf = particlefilter(num_particles=10, vis_noise = .001 ,ultra_noise = .001, linear_noise = 0, angular_noise = .001, ar_resample_rate=10, ar_resample=False)
 
 	#NEED TO ADD HEADING INFORMATION
 	def update(self, data):
@@ -27,7 +27,6 @@ class localize:
 		# self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 
 	def ar_correct(self, data):
-		delta_t = time.time() - self.time
 		self.pf.ar_correct(data)
 
 	def estimate(self):

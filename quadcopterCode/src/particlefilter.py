@@ -8,6 +8,7 @@ import sys
 import time
 import random
 from math import *
+from copy import *
 import numpy
 from utils import *
 #ROS related initializations
@@ -87,11 +88,12 @@ class particlefilter:
 		if (self.first_propagate):
 			self.start_gyr_heading = rotZ
 
-		theta = clamp_angle(rotZ - self.start_gyr_heading)
+		delta_theta = clamp_angle((rotZ- self.start_gyr_heading) - self.est.theta)
 
 		for particle in self.particle_list:
-			particle.propagate_alt(delta_t, x_vel, y_vel, altd, theta)
+			particle.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta)
 
+		#Move this to correct_alt at some point
 		self.step += 1
 		self.estimate_equal()
 		self.fp_alt.write("%d,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta))
@@ -174,20 +176,20 @@ class particlefilter:
 		global_rot = rotation_from_matrix(global_mat)
 
 		global_trans = global_trans*1000 #Convert to mm
-		global_heading = clamp_angle(global_rot[0]*180/pi) #Convert to degrees
+		global_heading = clamp_angle(global_rot[0]*180/pi + 180) #Convert to degrees
 
 		self.tag_est.x = global_trans[0]
 		self.tag_est.y = global_trans[1]
 		self.tag_est.z = global_trans[2]
-		self.tag_est.theta = global_rot[0]
-
-		#Weight particles
-		self.weight_particles(self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta, True)
-		self.estimate()
-		#Create new set of particles
-		self.particle_list = []
+		self.tag_est.theta = global_heading
 
 		if (self.ar_resample):
+			#Weight particles
+			self.weight_particles(self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta, True)
+			#Create new set of particles
+			self.particle_list = []
+
+			print len(self.weight_dict)
 			#Initialize the random selector. Can select items in O(1) time
 			wrand = walkerrandom(self.weight_dict.values(), self.weight_dict.keys())
 
@@ -200,6 +202,9 @@ class particlefilter:
 				else:
 					new_particle = wrand.random()
 				self.particle_list.append(new_particle)
+
+		if (len(self.particle_list) != self.num_particles):
+			print("WRONG NUMBER OF PARTICLES")
 
 		
 		self.fp_ar.write("%d,%d,%f,%f,%f,%f\n" % (self.step, marker_id, self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta))
@@ -217,6 +222,7 @@ class particlefilter:
 	def weight_particles(self, x_est, y_est, z_est, theta_est, ar=False):
 		self.weight_dict = dict()
 		weight_sum = 0
+		print "Particles : %d" % len(self.particle_list)
 		for particle in self.particle_list:
 
 			#Calculate distances
@@ -240,13 +246,16 @@ class particlefilter:
 
 			weight = lat_weight + vert_weight + theta_weight
 
-			self.weight_dict[particle] = weight
+			self.weight_dict[copy(particle)] = weight
 			weight_sum += weight
 
 		#Normalize the weights
 		for particle, weight in self.weight_dict.iteritems():
 			if (weight_sum != 0):
 				weight = weight/weight_sum
+
+		print "Weight list : %d" % len(self.weight_dict)
+		print "--------"
 
 	
 	#Return an estimate of the pose
@@ -261,10 +270,10 @@ class particlefilter:
 			self.est.theta += part.z*weight
 			total += weight
 
-		self.est.x/total
-		self.est.y/total
-		self.est.z/total
-		self.est.theta/total
+		self.est.x = self.est.x/total
+		self.est.y = self.est.y/total
+		self.est.z = self.est.z/total
+		self.est.theta = self.est.theta/total
 
 
 
@@ -275,13 +284,16 @@ class particlefilter:
 			self.est.x += part.x
 			self.est.y += part.y
 			self.est.z += part.z
-			self.est.theta += part.z
+			self.est.theta += part.theta
 			total += 1
 
-		self.est.x/total
-		self.est.y/total
-		self.est.z/total
-		self.est.theta/total
+		if (total == 0):
+			print "No particles"
+		else:
+			self.est.x = self.est.x/total
+			self.est.y = self.est.y/total
+			self.est.z = self.est.z/total
+			self.est.theta = self.est.theta/total
 
 
 
@@ -303,14 +315,14 @@ class particle:
 		self.parent = particlefilter
 
 	#Update the values of the particle based on acc and gyr data
-	def propagate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, theta_delta, noise):
+	def propagate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, delta_theta, noise):
 		if (self.parent.step%100 == 0):
 			self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
 		
 		x_acc_noise = x_acc
 		y_acc_noise = y_acc
 		z_acc_noise = z_acc
-		theta_delta_noise = theta_delta
+		delta_theta_noise = delta_theta
 		rotX_noise = rotX
 		rotY_noise = rotY
 
@@ -320,9 +332,9 @@ class particle:
 			z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)
 			rotX_noise = random.normalvariate(rotX, self.parent.angular_noise)
 			rotY_noise = random.normalvariate(rotY, self.parent.angular_noise)
-			theta_delta_noise = random.normalvariate(theta_delta, self.parent.angular_noise)
+			delta_theta_noise = random.normalvariate(delta_theta, self.parent.angular_noise)
 
-		self.theta = clamp_angle(self.theta + theta_delta_noise)
+		self.theta = clamp_angle(self.theta + delta_theta_noise)
 
 		acc_m = numpy.matrix([[x_acc_noise], [y_acc_noise], [z_acc_noise], [1]])
 
@@ -345,12 +357,15 @@ class particle:
 		self.y += y_delta
 		self.z += z_delta
 
-	def propagate_alt(self, delta_t, x_vel, y_vel, altd, theta):
+	def propagate_alt(self, delta_t, x_vel, y_vel, altd, delta_theta):
 		self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.theta, x_vel, y_vel, altd))
 		vel_m = numpy.matrix([[x_vel], [y_vel], [0], [1]])
 
-		theta_noise = random.normalvariate(theta, self.parent.angular_noise)
-		vel_global_m = rotate(vel_m, 0, 0, theta_noise)
+		delta_theta_noise = random.normalvariate(delta_theta, self.parent.angular_noise)
+
+		self.theta = clamp_angle(self.theta + delta_theta_noise)
+
+		vel_global_m = rotate(vel_m, 0, 0, self.theta)
 
 		x_vel_global = vel_global_m.item(0)
 		y_vel_global = vel_global_m.item(1)
@@ -358,13 +373,14 @@ class particle:
 		x_vel_global_noise = random.normalvariate(x_vel_global, self.parent.vis_noise)
 		y_vel_global_noise = random.normalvariate(y_vel_global, self.parent.vis_noise)
 
+		z_noise = random.normalvariate(altd, self.parent.ultra_noise)
+
 		x_delta = x_vel_global_noise*delta_t
 		y_delta = y_vel_global_noise*delta_t
 
 		self.x += x_delta
 		self.y += y_delta
-		self.z = altd
-		self.theta = theta_noise
+		self.z = z_noise
 
 	def to_string(self):
 		return "(%.2f, %.2f, %.2f, %.4f)" % (self.x, self.y, self.z, self.theta)

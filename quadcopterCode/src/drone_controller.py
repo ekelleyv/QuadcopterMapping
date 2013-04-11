@@ -83,7 +83,6 @@ class DroneController(DroneVideoDisplay):
 		self.last_time = time()
 		self.localize.update(data)
 		self.pose = self.localize.estimate()
-		self.br.sendTransform((0, 0, 0), tf.transformations.quaternion_from_euler(0, 0, 0), rospy.Time(0), "/ardrone/ardrone_base_link", "/world")
 
 		distance = self.get_distance()
 		angle = self.get_angle_diff()
@@ -96,7 +95,7 @@ class DroneController(DroneVideoDisplay):
 		y_diff = (self.current_waypoint.y - self.pose.y)
 		z_diff = (self.current_waypoint.z - self.pose.z)
 
-		# print("Elapsed time: %f" % (time() - self.last_time))
+		# prnt("Elapsed time: %f" % (time() - self.last_time))
 		avg = (time() - self.start_time)/self.steps
 		# print("Average time: %f" % (avg))
 		self.steps += 1

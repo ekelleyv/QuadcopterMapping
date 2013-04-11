@@ -60,14 +60,16 @@ end
 function [] = ar_pos(data_ar)
 	figure;
 	hold on;
+	title('AR Tag Position')
 	axis equal;
 	plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
 	hold off;
 end
 
-function [] = ar_pos(data_ar)
+function [] = alt_pos(data_alt)
 	figure;
 	hold on;
+	title('Combined alt position')
 	axis equal;
 	plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
 	hold off;

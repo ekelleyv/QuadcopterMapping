@@ -1,0 +1,12 @@
+digraph G {
+"/world" -> "/ardrone/ardrone_base_link"[label="Broadcaster: /world_broadcaster\nAverage rate: 10.179 Hz\nMost recent transform: -0.086 sec old \nBuffer length: 4.912 sec\n"];
+"/ardrone/ardrone_base_link" -> "/ardrone/ardrone_base_frontcam"[label="Broadcaster: /ardrone_driver\nAverage rate: 10.195 Hz\nMost recent transform: 0.015 sec old \nBuffer length: 4.904 sec\n"];
+"/ardrone/ardrone_base_link" -> "/ardrone/ardrone_base_bottomcam"[label="Broadcaster: /ardrone_driver\nAverage rate: 10.195 Hz\nMost recent transform: 0.015 sec old \nBuffer length: 4.904 sec\n"];
+"/world" -> "/marker_1"[label="Broadcaster: /marker_1_broadcaster\nAverage rate: 10.182 Hz\nMost recent transform: -0.096 sec old \nBuffer length: 4.911 sec\n"];
+"/world" -> "/marker_2"[label="Broadcaster: /marker_2_broadcaster\nAverage rate: 10.188 Hz\nMost recent transform: -0.020 sec old \nBuffer length: 4.810 sec\n"];
+"/world" -> "/marker_0"[label="Broadcaster: /marker_0_broadcaster\nAverage rate: 10.176 Hz\nMost recent transform: -0.029 sec old \nBuffer length: 4.815 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1365712479.817"[ shape=plaintext ] ;
+ }->"/world";
+}

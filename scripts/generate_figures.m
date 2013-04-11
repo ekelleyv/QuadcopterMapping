@@ -35,19 +35,22 @@ function [ data_obj ] = generate_figures( filename )
 	data_obj = importdata(filename, ',', 1);
 
 	ar_filename = strcat(filename(1:end-4), '_ar.txt')
+	alt_filename = strcat(filename(1:end-4), '_alt.txt')
 	data_ar = importdata(ar_filename, ',');
+	data_alt = importdata(alt_filename, ',');
 
-	data = data_obj.data;
-	data(2:end, :);
-	% acc_pos(data);
-	vis_pos(data);
+	% data = data_obj.data;
+	% data = data(2:end, :);
+	% % acc_pos(data);
+	% vis_pos(data);
 	% vis_readings(data);
 	% sensor_data(data);
-	euler_method(data);
+	% euler_method(data);
 	% plot_acc(data);
 	% rotation_values(data);
 
 	ar_pos(data_ar);
+	alt_pos(data_alt);
 
 
 
@@ -59,6 +62,14 @@ function [] = ar_pos(data_ar)
 	hold on;
 	axis equal;
 	plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
+	hold off;
+end
+
+function [] = ar_pos(data_ar)
+	figure;
+	hold on;
+	axis equal;
+	plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
 	hold off;
 end
 
@@ -149,6 +160,12 @@ function [] = acc_pos(data)
 end
 
 function [] = vis_pos(data)
+	figure;
+	hold on;
+	plot(data(:, 16)/1000);
+
+	hold off;
+
 	figure;
 	hold on;
 	title('Visual Odometry Position (m)');

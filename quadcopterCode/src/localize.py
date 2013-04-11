@@ -22,10 +22,12 @@ class localize:
 		#Get delta t and update tm
 		delta_t = time.time() - self.time #Time in seconds
 		self.time = time.time()
-		self.pf.propogate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
-		self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
+		self.pf.propagate_alt(delta_t, data.vx, data.vy, data.altd, data.rotZ)
+		# self.pf.propagate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
+		# self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 
 	def ar_correct(self, data):
+		delta_t = time.time() - self.time
 		self.pf.ar_correct(data)
 
 	def estimate(self):

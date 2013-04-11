@@ -17,6 +17,7 @@ from visualization_msgs.msg import *
 # An enumeration of Drone Statuses
 from drone_status import DroneStatus
 from basic_commands import BasicCommands
+from utils import *
 from keyboard_controller import *
 from drone_video_display import DroneVideoDisplay
 from waypoints import waypoints
@@ -64,16 +65,7 @@ class DroneController(DroneVideoDisplay):
 
 	#Get clamped angle difference
 	def get_angle_diff(self):
-		return abs(self.clamp_angle(self.current_waypoint.theta - self.pose.theta))
-
-	#Clamp angle between -180 and 180
-	def clamp_angle(self, angle):
-		if (angle > 180):
-			return angle - 360
-		elif (angle < -180):
-			return angle + 360
-		else:
-			return angle
+		return abs(clamp_angle(self.current_waypoint.theta - self.pose.theta))
 
 	#Recieve data from ROS msgs
 	def listener(self):
@@ -129,8 +121,9 @@ class DroneController(DroneVideoDisplay):
 
 def main():
 	rospy.init_node("controller")
-	cmd = BasicCommands()
-	controller = DroneController(cmd)
+	# cmd = BasicCommands()
+	# controller = DroneController(cmd)
+	controller = DroneController()
 	run = raw_input("Press any key to run:")
 
 	print "Running"

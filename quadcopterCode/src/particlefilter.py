@@ -58,6 +58,11 @@ class particlefilter:
 		self.vis_est = particle(self) #Estimation using vis odometry and ultrasound
 		self.tag_est = particle(self) #Estimation using visual tags
 
+		self.x_std = 0
+		self.y_std = 0
+		self.z_std = 0
+		self.theta_std = 0
+
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
 
@@ -73,6 +78,7 @@ class particlefilter:
 	def propagate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, rotZ):
 		if (self.first_propagate):
 			self.start_gyr_heading = rotZ
+			self.first_propagate = False
 
 		delta_theta = clamp_angle((rotZ- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
 
@@ -87,22 +93,30 @@ class particlefilter:
 	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotZ):
 		if (self.first_propagate):
 			self.start_gyr_heading = rotZ
+			self.first_propagate = False
 
-		delta_theta = clamp_angle((rotZ- self.start_gyr_heading) - self.est.theta)
+		# print "Zeroed rotZ: %f" % clamp_angle(rotZ - self.start_gyr_heading)
+		delta_theta = clamp_angle((rotZ - self.start_gyr_heading) - self.est.theta)
 
 		for particle in self.particle_list:
 			particle.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta)
 
+		# self.vis_est.x += x_delta
+		# self.vis_est.y += y_delta
+		# self.vis_est.z = z_est
+		# self.vis_est.theta = mag_theta_est
+
 		#Move this to correct_alt at some point
 		self.step += 1
 		self.estimate_equal()
-		self.fp_alt.write("%d,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta))
+		self.fp_alt.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta, self.x_std, self.y_std, self.z_std, self.theta_std))
 
 
 	#Correct particles based on visual odometry and magnetometer readings
 	def correct(self, delta_t, x_vel, y_vel, z_est, magX, magY, magZ):
 		if (self.first_correct):
 			self.start_mag_heading = get_heading(magX, magY, magZ)
+			self.first_correct = False
 
 		mag_theta_est = clamp_angle(get_heading(magX, magY, magY)-self.start_mag_heading)
 		x_delta = (x_vel*cos(radians(mag_theta_est)) - y_vel*sin(radians(mag_theta_est)))*delta_t
@@ -196,10 +210,14 @@ class particlefilter:
 			for i in range(self.num_particles):
 				#Create particle from new value
 				new_particle = particle(self)
-				if (random.random() < self.ar_resample/100):
+				rand_val = random.random()
+				threshold = self.ar_resample_rate/100.0
+				if (rand_val < threshold):
+					print "Particle at (%f, %f, %f, %f)" % (self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta)
 					new_particle = particle(self, self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta)
 				#Randomly pick existing particle
 				else:
+					# print "Picking existing"
 					new_particle = wrand.random()
 				self.particle_list.append(new_particle)
 
@@ -246,7 +264,7 @@ class particlefilter:
 
 			weight = lat_weight + vert_weight + theta_weight
 
-			self.weight_dict[copy(particle)] = weight
+			self.weight_dict[copy(particle)] = 1#weight
 			weight_sum += weight
 
 		#Normalize the weights
@@ -279,21 +297,34 @@ class particlefilter:
 
 	def estimate_equal(self):
 		self.est = particle(self)
+		x_val = []
+		y_val = []
+		z_val = []
+		theta_val = []
 		total = 0
 		for part in self.particle_list:
 			self.est.x += part.x
 			self.est.y += part.y
 			self.est.z += part.z
 			self.est.theta += part.theta
+			x_val.append(part.x)
+			y_val.append(part.y)
+			z_val.append(part.z)
+			theta_val.append(part.theta)
 			total += 1
 
-		if (total == 0):
-			print "No particles"
-		else:
-			self.est.x = self.est.x/total
-			self.est.y = self.est.y/total
-			self.est.z = self.est.z/total
-			self.est.theta = self.est.theta/total
+		self.est.x = self.est.x/total
+		self.est.y = self.est.y/total
+		self.est.z = self.est.z/total
+		self.est.theta = self.est.theta/total
+
+		self.x_std = numpy.average(x_val)
+		self.y_std = numpy.average(y_val)
+		self.z_std = numpy.average(z_val)
+		self.theta_std = numpy.average(theta_val)
+
+		# print("(%f, %f, %f, %f)" % (self.x_std, self.y_std, self.z_std, self.theta_std))
+		print("(%f, %f, %f, %f)" % (self.est.x, self.est.y, self.est.z, self.est.theta))
 
 
 
@@ -362,10 +393,11 @@ class particle:
 		vel_m = numpy.matrix([[x_vel], [y_vel], [0], [1]])
 
 		delta_theta_noise = random.normalvariate(delta_theta, self.parent.angular_noise)
-
+		# print delta_theta_noise
 		self.theta = clamp_angle(self.theta + delta_theta_noise)
 
 		vel_global_m = rotate(vel_m, 0, 0, self.theta)
+		# vel_global_m = rotate(vel_m, 0, 0, 90)
 
 		x_vel_global = vel_global_m.item(0)
 		y_vel_global = vel_global_m.item(1)

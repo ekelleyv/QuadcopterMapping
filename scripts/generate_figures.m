@@ -71,7 +71,13 @@ function [] = alt_pos(data_alt)
 	hold on;
 	title('Combined alt position')
 	axis equal;
-	plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
+	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
+	plot(data_alt(:, 3), data_alt(:, 4));
+	for i=1:length(data_alt(:, 6))
+		x_width = 10%data_alt(i, 6) + .1
+		y_width = 10%data_alt(i, 7) + .1
+		rectangle('Position', [data_alt(i, 3) - x_width/2, data_alt(i, 4) - y_width/2, x_width, y_width])
+	end
 	hold off;
 end
 

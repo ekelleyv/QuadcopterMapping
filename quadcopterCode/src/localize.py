@@ -15,7 +15,7 @@ from visualization_msgs.msg import *
 class localize:
 	def __init__(self):
 		self.time = time.time()
-		self.pf = particlefilter(num_particles=10, vis_noise = .001 ,ultra_noise = .001, linear_noise = 0, angular_noise = .001, ar_resample_rate=10, ar_resample=False)
+		self.pf = particlefilter(num_particles=1000, vis_noise = 0 ,ultra_noise = 0, linear_noise = 0, angular_noise = 0, ar_resample_rate=0, ar_resample=False)
 
 	#NEED TO ADD HEADING INFORMATION
 	def update(self, data):

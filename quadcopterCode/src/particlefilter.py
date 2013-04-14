@@ -58,11 +58,6 @@ class particlefilter:
 		self.vis_est = particle(self) #Estimation using vis odometry and ultrasound
 		self.tag_est = particle(self) #Estimation using visual tags
 
-		self.x_std = 0
-		self.y_std = 0
-		self.z_std = 0
-		self.theta_std = 0
-
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
 
@@ -81,13 +76,15 @@ class particlefilter:
 		delta_theta = clamp_angle((rotZ - self.start_gyr_heading) - self.est.theta)
 
 		for particle in self.particle_list:
-			particle.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta)
+			particle.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta, True)
+
+		self.vis_est.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta, False)
 
 		#Move this to correct_alt at some point
 		self.step += 1
 		self.estimate_equal()
 		self.publish_pose()
-		self.fp_alt.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta, self.x_std, self.y_std, self.z_std, self.theta_std))
+		self.fp_alt.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta, self.vis_est.x, self.vis_est.y, self.vis_est.z, self.vis_est.theta))
 
 
 	def ar_correct(self, marker):
@@ -271,15 +268,6 @@ class particlefilter:
 		self.est.z = self.est.z/total
 		self.est.theta = self.est.theta/total
 
-		self.x_std = numpy.std(x_val)
-		self.y_std = numpy.std(y_val)
-		self.z_std = numpy.std(z_val)
-		self.theta_std = numpy.std(theta_val)
-
-		# print("(%f, %f, %f, %f)" % (self.x_std, self.y_std, self.z_std, self.theta_std))
-		# print("(%f, %f, %f, %f)" % (self.est.x, self.est.y, self.est.z, self.est.theta))
-
-
 
 
 	def print_particles(self):
@@ -298,24 +286,34 @@ class particle:
 		self.theta = theta
 		self.parent = particlefilter
 
-	def propagate_alt(self, delta_t, x_vel, y_vel, altd, delta_theta):
-		self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.theta, x_vel, y_vel, altd))
+	def propagate_alt(self, delta_t, x_vel, y_vel, altd, delta_theta, noise=True):
+		if (noise):
+			self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.theta, x_vel, y_vel, altd))
 		vel_m = numpy.matrix([[x_vel], [y_vel], [0], [1]])
 
-		delta_theta_noise = random.normalvariate(delta_theta, self.parent.angular_noise)
+		angular_noise = 0
+		vis_noise = 0
+		ultra_noise = 0
+
+		if (noise):
+			angular_noise = self.parent.angular_noise
+			vis_noise = self.parent.vis_noise
+			ultra_noise = self.parent.ultra_noise
+
+
+		delta_theta_noise = random.normalvariate(delta_theta, angular_noise)
 		# print delta_theta_noise
 		self.theta = clamp_angle(self.theta + delta_theta_noise)
 
 		vel_global_m = rotate(vel_m, 0, 0, self.theta)
-		# vel_global_m = rotate(vel_m, 0, 0, 90)
 
 		x_vel_global = vel_global_m.item(0)
 		y_vel_global = vel_global_m.item(1)
 
-		x_vel_global_noise = random.normalvariate(x_vel_global, self.parent.vis_noise)
-		y_vel_global_noise = random.normalvariate(y_vel_global, self.parent.vis_noise)
+		x_vel_global_noise = random.normalvariate(x_vel_global, vis_noise)
+		y_vel_global_noise = random.normalvariate(y_vel_global, vis_noise)
 
-		z_noise = random.normalvariate(altd, self.parent.ultra_noise)
+		z_noise = random.normalvariate(altd, ultra_noise)
 
 		x_delta = x_vel_global_noise*delta_t
 		y_delta = y_vel_global_noise*delta_t

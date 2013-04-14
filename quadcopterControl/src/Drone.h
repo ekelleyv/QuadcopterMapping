@@ -18,7 +18,14 @@
  * TUM_ARDRONE INCLUDES
  */
 #include "tum_ardrone/filter_state.h"
-
+ 
+/* 
+ *  ROS INCLUDES
+ * 
+ */
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Quaternion.h>
+#include <tf/transform_datatypes.h>
 
 /* 
  * C++ INCLUDES
@@ -38,6 +45,7 @@ public:
 	//PUBLIC FUNCTIONS
 	void updateNavState(const ardrone_autonomy::Navdata::ConstPtr& msg);
 	void updateTumState(const tum_ardrone::filter_state::ConstPtr& msg);
+	void updatePFState(const geometry_msgs::Pose::ConstPtr& msg);
 	void updateState();
 	void printState();
 	void setMaximums(double maxAngle, double maxZDot, double maxPsiDot);
@@ -78,6 +86,12 @@ public:
 	double _phin;
 	double _psin;
 
+	//particle filter data
+	double _xpf;
+	double _ypf;
+	double _zpf;
+	geometry_msgs::Quaternion _orient;
+
 	//tum_ardrone data
 	double _xt;
 	double _yt;
@@ -97,6 +111,7 @@ public:
 	ros::Time lastControlTime;
 	ros::Time lastUpdateTime; 
 	ros::Time lastTumTime;
+	ros::Time lastPFTime;
 
 	Controller* _droneController;
 	int _updateType;

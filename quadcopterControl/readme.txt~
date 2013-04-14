@@ -19,3 +19,7 @@ cd ./control_scripts/takeoff
 rostopic pub /cmd_vel geometry_msgs/Twist '[x, y, z]' '[x, y, z]' - this is between -1 and 1
 cd ./control_scripts/land
 ctrl-c out of quadcopter_datalog
+
+Ed's code
+roslaunch quadcopterCode driver.launch
+rosrun quadcopterCode localize.py

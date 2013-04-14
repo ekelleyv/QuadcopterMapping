@@ -17,6 +17,7 @@
   <depend package="std_msgs"/>
   <depend package="image_transport"/>
   <depend package="rosbag"/>
+  <depend package="ar_pose"/>
 </package>
 
 

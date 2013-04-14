@@ -67,8 +67,9 @@ std::fstream settingsLog; //settings of the trial
 std::fstream navLog; //name of log file
 std::fstream predictLog; //log predicted things
 std::fstream controlLog; //log control commands
+std::fstream edLog; //log particle filter things
 rosbag::Bag bagLog("bagLog.bag", rosbag::bagmode::Write); //rosbag all messages
-int updateType = 0; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata
+int updateType = 4; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata, 4 for ed's localization code
 long programStart; //time of program start
 struct tm *now; //beginning of programming
 Drone* droneP;
@@ -79,6 +80,7 @@ Drone* droneP;
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
 void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+void particleFilterCB(const geometry_msgs::Pose::ConstPtr& msg);
 void imgCB(const sensor_msgs::ImageConstPtr& msg);
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg);
 
@@ -140,6 +142,22 @@ void cmdVelCB(const geometry_msgs::TwistConstPtr& msg) {
 
 	//log control 
 	controlLog << "time= " << currentTime << " messageTime = " << ros::Time::now() << " command= " << msg->linear.x << " " << msg->linear.y << " " << msg->linear.z << " " << msg->angular.x << " " << msg->angular.y << " " << msg->angular.z << "\n";
+}
+
+/* Callback function to update based on particle filter*/
+void particleFilterCB(const geometry_msgs::Pose::ConstPtr& msg) {
+	//get elapsed time
+   	long end = myclock();
+        long currentTime = (end-programStart)/1000000.0;
+
+	edLog << "time= " << currentTime << " position= " << msg->position.x << " " << msg->position.y << " " << msg->position.z << " quaternion= " << msg->orientation.x << " " <<msg->orientation.y << " " <<  msg->orientation.z << " " << msg->orientation.w;
+//quaternion is about [0,0,1]
+
+	droneP->updatePFState(msg);
+	droneP->updateState();
+
+	edLog << " newPosition= " << droneP->_x << " " << droneP->_y << " angles= " << droneP->_theta << " " << droneP->_phi << " " << droneP->_psi << " altitude= " << droneP->_alt << " velocities= " << droneP->_u << " " << droneP->_v << " " << droneP->_w << " accelerations= " << droneP->_udot << " " << droneP->_vdot << " " << droneP->_wdot << "\n";
+
 }
 
 /* 
@@ -209,27 +227,38 @@ int main(int argc, char** argv) {
 	//make log files, named ROS_WORKSPACE/[type]Log_[datetime]
 	std::stringstream settingsStr;
 	settingsStr << ROS_WORKSPACE << "settings" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
-	const std::string tmps = settingsStr.str();
-	const char* settingsName = tmps.c_str();
-	settingsLog.open(settingsName, std::ios_base::out);
+	settingsLog.open(settingsStr.str().c_str(), std::ios_base::out);
+	//const std::string tmps = settingsStr.str();
+	//const char* settingsName = tmps.c_str();
+	//settingsLog.open(settingsName, std::ios_base::out);
 
 	std::stringstream navLogStr;
 	navLogStr << ROS_WORKSPACE << "navLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
-	const std::string tmp2 = navLogStr.str();
-	const char* navLogName = tmp2.c_str();
-	navLog.open(navLogName, std::ios_base::out);
+	navLog.open(navLogStr.str().c_str(), std::ios_base::out);
+	//const std::string tmp2 = navLogStr.str();
+	//const char* navLogName = tmp2.c_str();
+	//navLog.open(navLogName, std::ios_base::out);
 
 	std::stringstream predictLogStr;
 	predictLogStr << ROS_WORKSPACE << "predictLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
-	const std::string tmp2_pr = predictLogStr.str();
-	const char* predictLogName = tmp2_pr.c_str();
-	predictLog.open(predictLogName, std::ios_base::out);
+	predictLog.open(predictLogStr.str().c_str(), std::ios_base::out);
+	//const std::string tmp2_pr = predictLogStr.str();
+	//const char* predictLogName = tmp2_pr.c_str();
+	//predictLog.open(predictLogName, std::ios_base::out);
 
 	std::stringstream controlLogStr;
 	controlLogStr << ROS_WORKSPACE << "controlLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
-	const std::string tmp3_pr = controlLogStr.str();
-	const char* controlLogName = tmp3_pr.c_str();
-	controlLog.open(controlLogName, std::ios_base::out);
+	controlLog.open(controlLogStr.str().c_str(), std::ios_base::out);
+	//const std::string tmp3_pr = controlLogStr.str();
+	//const char* controlLogName = tmp3_pr.c_str();
+	//controlLog.open(controlLogName, std::ios_base::out);
+
+	std::stringstream edLogStr;
+	edLogStr << ROS_WORKSPACE << "edLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
+	edLog.open(edLogStr.str().c_str(), std::ios_base::out);
+	//const std::string tmp3_pr = controlLogStr.str();
+	//const char* controlLogName = tmp3_pr.c_str();
+	//controlLog.open(controlLogName, std::ios_base::out);
 
 	std_msgs::Empty empty;
 	std_srvs::Empty emptyCall;
@@ -243,9 +272,10 @@ int main(int argc, char** argv) {
 	//service call to toggle camera
 	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/togglecam");
 
-	//subscribe to navdata
+	//subscribe to state estimates
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
 	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
+	ros::Subscriber particlefilter_sub = n.subscribe("/pf_localization", 1000, particleFilterCB);
 
 	/***INITIALIZE DRONE STUFF***/
 	ROS_INFO("Initialize drone stuff...");
@@ -411,7 +441,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
 	while (takeoff.getNumSubscribers() < 1) { ;}
 	cmd_vel.publish(velocity);
-	takeoff.publish(empty);
+	//takeoff.publish(empty);
 	ros::spinOnce();
 	ros::Duration(5).sleep(); // sleep to allow the drone to take off
 

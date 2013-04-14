@@ -37,9 +37,9 @@ Drone::Drone(double initialx, double initialy, double initialalt, int updateType
 	_phi = 0;
 	_psi = 0;
 
-	_xn = initialx;
-	_yn = initialy;
-	_altn = initialalt;
+	_xn = 0;
+	_yn = 0;
+	_altn = 0;
 	_un = 0;
 	_vn = 0;
 	_wn = 0;
@@ -50,15 +50,19 @@ Drone::Drone(double initialx, double initialy, double initialalt, int updateType
 	_phin = 0;
 	_psin = 0;
 
-	_xt = initialx;
-	_yt = initialy;
-	_altt = initialalt;
+	_xt = 0;
+	_yt = 0;
+	_altt = 0;
 	_ut = 0;
 	_vt = 0;
 	_wt = 0;
 	_thetat = 0;
 	_phit = 0;
 	_psit = 0;
+
+	_xpf = 0;
+	_ypf = 0;
+	_zpf = 0;
 
 	_maxAngle = 12;
 	_maxZDot = 700;
@@ -68,6 +72,7 @@ Drone::Drone(double initialx, double initialy, double initialalt, int updateType
 	lastControlTime = ros::Time::now();
 	lastUpdateTime = ros::Time::now();
 	lastTumTime = ros::Time::now();
+	lastPFTime = ros::Time::now();
 
 	_droneController = new Controller();
 	_updateType = updateType;
@@ -113,10 +118,15 @@ Drone::Drone(double initialx, double initialy, double initialalt, double kpX, do
 	_phit = 0;
 	_psit = 0;
 
+	_xpf = 0;
+	_ypf = 0;
+	_zpf = 0;
+
 	lastStateTime = ros::Time::now();
 	lastControlTime = ros::Time::now();
 	lastUpdateTime = ros::Time::now();
 	lastTumTime = ros::Time::now();
+	lastPFTime = ros::Time::now();
 
 	_droneController = new Controller(kpX, kiX, kdX, kpY, kiY, kdY, kpA, kiA, kdA, kpT, kiT, kdT);
 	_updateType = updateType;
@@ -173,6 +183,19 @@ void Drone::updateTumState(const tum_ardrone::filter_state::ConstPtr& msg) {
 
 }
 
+/*Update particle filter state*/
+void Drone::updatePFState(const geometry_msgs::Pose::ConstPtr& msg) {
+
+	_xpf = msg->position.x;
+	_ypf = msg->position.y;
+	_zpf = msg->position.z;
+	_orient = msg->orientation;
+
+	lastPFTime = ros::Time::now();
+
+	std::cout << "updating " << _xpf << " " << _ypf << " " << _zpf << std::endl;
+}
+
 
 /* Update state*/
 void Drone::updateState() {
@@ -195,13 +218,13 @@ void Drone::updateState() {
 	else if (_updateType == 1) {
 		_x = _xt;
 		_y = _yt;
-		_alt = _altt;
+		_alt = _altn;
 		_u = _ut;
 		_v = _vt;
 		_w = _wt;
 		_phi = _phit;
 		_theta = _thetat;
-		_psi = _psit;
+		_psi = _psin;
 		lastUpdateTime = lastTumTime;
 	}
 	else if (_updateType == 2) {
@@ -209,13 +232,13 @@ void Drone::updateState() {
 		lastUpdateTime = lastTumTime;
 		_x = _x + _ut*dt;
 		_y = _y + _vt*dt;
-		_alt = _altt;
+		_alt = _altn;
 		_u = _ut;
 		_v = _vt;
 		_w = _wt;
 		_phi = _phit;
 		_theta = _thetat;
-		_psi = _psit;
+		_psi = _psin;
 	}
 	else if (_updateType == 3) {
 		double dt = (lastStateTime - lastUpdateTime).toSec();
@@ -233,6 +256,14 @@ void Drone::updateState() {
 		_theta =  _thetan;
 		_psi = _psin;
 		_alt = _altn;
+	}
+	else if (_updateType == 4) {
+		_x = _xpf;
+		_y = _ypf;	
+		_alt = _zpf;
+		_psi = tf::getYaw(_orient)-180;
+
+		lastUpdateTime = lastPFTime;
 	}
 
 }

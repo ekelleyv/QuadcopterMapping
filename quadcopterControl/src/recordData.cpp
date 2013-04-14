@@ -43,7 +43,7 @@ using namespace std;
 /*
  * TUM_ARDRONE INCLUDES
  */
-#include "tum_ardrone/filter_state.h"
+//#include "tum_ardrone/filter_state.h"
 
 /*
  * AR.DRONE LIBRARY INCLUDES
@@ -80,7 +80,7 @@ struct tm *now; //beginning of programming
  */
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
-void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+//void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
 void imgCB(const sensor_msgs::ImageConstPtr& msg);
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg);
 
@@ -112,14 +112,14 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 /* 
  * Callback function when predictdata is updated. Logs predictData in logfile. 
  */
-void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
+/*void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
 	//get elapsed time
    	long end = myclock();
         long currentTime = (end-programStart)/1000000.0;
 
 	//log all variables
 	predictLog << "time= " << currentTime << " messageTime= " << msg->header.stamp << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->droneState << " pos = " << msg->x << " " << msg-> y << " " << msg->z << " linearV= " << msg->dx << " " << msg->dy << " " << msg->dz << " rot= " << msg->pitch << " " << msg->roll << " " << msg->yaw << " dyaw= " << msg->dyaw << " scale= " << msg->scale << " ptamState= " << msg->ptamState << " scaleAccuracy= " << msg->scaleAccuracy << "\n";
-}
+}*/
 
 /*
  * Callback function when cmd_vel is given a command.
@@ -192,11 +192,11 @@ int main(int argc, char** argv) {
 	const char* navLogName = tmp2.c_str();
 	navLog.open(navLogName, std::ios_base::out);
 
-	std::stringstream predictLogStr;
+	/*std::stringstream predictLogStr;
 	predictLogStr << ROS_WORKSPACE << "predictLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
 	const std::string tmp2_pr = predictLogStr.str();
 	const char* predictLogName = tmp2_pr.c_str();
-	predictLog.open(predictLogName, std::ios_base::out);
+	predictLog.open(predictLogName, std::ios_base::out);*/
 
 	std::stringstream controlLogStr;
 	controlLogStr << ROS_WORKSPACE << "controlLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
 
 	//subscribe to navdata
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
-	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
+	//ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
 
 	//make openCV windows
 	cvNamedWindow("view");

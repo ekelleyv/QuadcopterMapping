@@ -17,7 +17,7 @@
 /*
  * TUM_ARDRONE INCLUDES
  */
-#include "tum_ardrone/filter_state.h"
+//#include "tum_ardrone/filter_state.h"
  
 /* 
  *  ROS INCLUDES
@@ -44,7 +44,7 @@ public:
 
 	//PUBLIC FUNCTIONS
 	void updateNavState(const ardrone_autonomy::Navdata::ConstPtr& msg);
-	void updateTumState(const tum_ardrone::filter_state::ConstPtr& msg);
+	//void updateTumState(const tum_ardrone::filter_state::ConstPtr& msg);
 	void updatePFState(const geometry_msgs::Pose::ConstPtr& msg);
 	void updateState();
 	void printState();

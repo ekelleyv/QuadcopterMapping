@@ -44,7 +44,7 @@ using namespace std;
 /*
  * TUM_ARDRONE INCLUDES
  */
-#include "tum_ardrone/filter_state.h"
+//#include "tum_ardrone/filter_state.h"
 
 /*
  * PROJECT INCLUDES
@@ -58,18 +58,18 @@ using namespace std;
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
-#define ROS_WORKSPACE "/home/sytang/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/bin/" 
+#define ROS_WORKSPACE "~/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/bin/" 
 
 /*
  * GLOBAL VARIABLES
  */
 std::fstream settingsLog; //settings of the trial
 std::fstream navLog; //name of log file
-std::fstream predictLog; //log predicted things
+//std::fstream predictLog; //log predicted things
 std::fstream controlLog; //log control commands
 std::fstream edLog; //log particle filter things
 rosbag::Bag bagLog("bagLog.bag", rosbag::bagmode::Write); //rosbag all messages
-int updateType = 0; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata, 4 for ed's localization code
+int updateType = 4; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata, 4 for ed's localization code
 long programStart; //time of program start
 struct tm *now; //beginning of programming
 Drone* droneP;
@@ -79,7 +79,7 @@ Drone* droneP;
  */
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
-void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+//void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
 void particleFilterCB(const geometry_msgs::Pose::ConstPtr& msg);
 void imgCB(const sensor_msgs::ImageConstPtr& msg);
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg);
@@ -119,7 +119,7 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 /* 
  * Callback function when predictdata is updated. Logs predictData in logfile. 
  */
-void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
+/*void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
 	//get elapsed time
    	long end = myclock();
         long currentTime = (end-programStart)/1000000.0;
@@ -133,7 +133,7 @@ void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
 	bagLog.write("predictdata", ros::Time::now(), msg);	
 
 	predictLog << " newPosition= " << droneP->_x << " " << droneP->_y << " angles= " << droneP->_theta << " " << droneP->_phi << " " << droneP->_psi << " altitude= " << droneP->_alt << " velocities= " << droneP->_u << " " << droneP->_v << " " << droneP->_w << " accelerations= " << droneP->_udot << " " << droneP->_vdot << " " << droneP->_wdot << "\n";
-}
+}*/
 
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg) {
 	//get elapsed time
@@ -149,6 +149,8 @@ void particleFilterCB(const geometry_msgs::Pose::ConstPtr& msg) {
 	//get elapsed time
    	long end = myclock();
         long currentTime = (end-programStart)/1000000.0;
+
+	bagLog.write("PFdata", ros::Time::now(), msg);
 
 	edLog << "time= " << currentTime << " position= " << msg->position.x << " " << msg->position.y << " " << msg->position.z << " quaternion= " << msg->orientation.x << " " <<msg->orientation.y << " " <<  msg->orientation.z << " " << msg->orientation.w;
 //quaternion is about [0,0,1]
@@ -239,9 +241,9 @@ int main(int argc, char** argv) {
 	//const char* navLogName = tmp2.c_str();
 	//navLog.open(navLogName, std::ios_base::out);
 
-	std::stringstream predictLogStr;
+	/*std::stringstream predictLogStr;
 	predictLogStr << ROS_WORKSPACE << "predictLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
-	predictLog.open(predictLogStr.str().c_str(), std::ios_base::out);
+	predictLog.open(predictLogStr.str().c_str(), std::ios_base::out);*/
 	//const std::string tmp2_pr = predictLogStr.str();
 	//const char* predictLogName = tmp2_pr.c_str();
 	//predictLog.open(predictLogName, std::ios_base::out);
@@ -267,14 +269,14 @@ int main(int argc, char** argv) {
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
 	image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //forward camera
-	//image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
+	image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
 
 	//service call to toggle camera
 	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/togglecam");
 
 	//subscribe to state estimates
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
-	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
+	//ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
 	ros::Subscriber particlefilter_sub = n.subscribe("/pf_localization", 1000, particleFilterCB);
 
 	/***INITIALIZE DRONE STUFF***/
@@ -419,36 +421,35 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	ROS_INFO("Zeroing cmd_vel..");
 	//initialize cmd_vel
 	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
-
-	//DON'T FORGET TO PUT THIS CHECK BACK
 	while (cmd_vel.getNumSubscribers() < 1) { ;}
-
 	geometry_msgs::Twist velocity;
-
 	velocity.linear.x = 0;
 	velocity.linear.y = 0;
 	velocity.linear.z = 0;	
 	velocity.angular.x = 0;
 	velocity.angular.y = 0;
 	velocity.angular.z = 0;
-
 	//cmd_vel.publish(velocity);
 	//ros::spinOnce(); //reset velocity
 	//ros::Subscriber cmdvel_sub = n.subscribe("/cmd_vel", 1000, cmdVelCB);
+
+	bool cam = false; //true if facing down
+	if (toggleCam.call(emptyCall)) { ROS_INFO("Toggling camera");}
+	else { ROS_ERROR("Failed to call toggle camera service");}//toggle the downward camera
+	cam = false;
 
 	//command take off
 	ROS_INFO("Taking off..");	
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
 	while (takeoff.getNumSubscribers() < 1) { ;}
 	cmd_vel.publish(velocity);
-	//takeoff.publish(empty);
+	takeoff.publish(empty);
 	ros::spinOnce();
 	ros::Duration(5).sleep(); // sleep to allow the drone to take off
 
 	int32_t controlFlag = 0;
 
 	/***BEGIN CONTROL LOOP***/
-	bool cam = false;
 	bool hover = false;
 	ros::Time hoverBegin;
 
@@ -603,7 +604,7 @@ settingsLog << " point= " << currentWaypoint << " thetades= " << velocity.linear
 	cvDestroyWindow("view");
 	navLog.close();
 	settingsLog.close();
-	predictLog.close();
+	//predictLog.close();
 	controlLog.close();
 	bagLog.close();
 

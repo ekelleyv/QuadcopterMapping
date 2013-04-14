@@ -165,7 +165,7 @@ void Drone::updateNavState(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 }
 
 /*Update the state of the drone*/
-void Drone::updateTumState(const tum_ardrone::filter_state::ConstPtr& msg) {
+/*void Drone::updateTumState(const tum_ardrone::filter_state::ConstPtr& msg) {
 	//msg->state - use drone state somehow?
 	//invert cordinate frames nad signs to match our convention
 
@@ -181,7 +181,7 @@ void Drone::updateTumState(const tum_ardrone::filter_state::ConstPtr& msg) {
 
 	lastTumTime = msg->header.stamp;
 
-}
+}*/
 
 /*Update particle filter state*/
 void Drone::updatePFState(const geometry_msgs::Pose::ConstPtr& msg) {

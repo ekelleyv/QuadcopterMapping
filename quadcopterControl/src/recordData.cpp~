@@ -43,7 +43,7 @@ using namespace std;
 /*
  * TUM_ARDRONE INCLUDES
  */
-#include "tum_ardrone/filter_state.h"
+//#include "tum_ardrone/filter_state.h"
 
 /*
  * AR.DRONE LIBRARY INCLUDES
@@ -80,7 +80,7 @@ struct tm *now; //beginning of programming
  */
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
-void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+//void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
 void imgCB(const sensor_msgs::ImageConstPtr& msg);
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg);
 

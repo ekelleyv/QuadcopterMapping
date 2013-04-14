@@ -24,9 +24,9 @@ from tf.transformations import *
 from tf import TransformerROS
 
 class particlefilter:
-	def __init__(self, num_particles=100, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3, ar_noise=10, ar_resample_rate=10, ar_resample=True):
+	def __init__(self, num_particles=100, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3, ar_noise=10, ar_resample_rate=30, ar_resample=True):
 		print("Starting a particle filer with %d particles" % num_particles)
-		self.filename = "/home/ekelley/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S') #in the format YYYYMMDDHHMMSS
+		self.filename = os.path.expanduser("~/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S')) #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
 		self.fp_part = open(self.filename+"_part.txt", "w")
 		self.fp_ar = open(self.filename+"_ar.txt", "w")
@@ -66,31 +66,13 @@ class particlefilter:
 		for i in range(num_particles):
 			self.particle_list.append(particle(self))
 
-		self.fp.write("self.step,delta_t,x_acc,y_acc,z_acc,gyr_theta_est,rotX,rotY,delta_theta,self.acc_est.x,self.acc_est.y,self.acc_est.z,self.acc_est.theta,x_vel,y_vel,z_est,magX,magY,magZ,mag_theta_est,new_x,new_y,self.vis_est.x,self.vis_est.y,self.est.x,self.est.y,self.est.theta\n")
-		self.est_pose = Point()
-		self.line = Marker()
-		self.est_pub = rospy.Publisher('pf_pose', Point)
+		self.est_pose = Pose()
+		self.est_pub = rospy.Publisher('pf_localization', Pose)
 		self.listener = TransformListener()
 		self.transformer = TransformerROS()
-		self.update_marker()
+		self.publish_pose()
 
-	#Propagate particles based on accelerometer data and gyroscope-based theta
-	def propagate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, rotZ):
-		if (self.first_propagate):
-			self.start_gyr_heading = rotZ
-			self.first_propagate = False
-
-		delta_theta = clamp_angle((rotZ- self.start_gyr_heading) - self.acc_est.theta) #Should I be using self.est.theta instead of prev_theta?
-
-		for particle in self.particle_list:
-			particle.propagate(delta_t, convert_g(x_acc), convert_g(y_acc), convert_g(z_acc), rotX, rotY, delta_theta, True)
-
-		#Propagate estimate based on magnetometer. for testing
-		self.acc_est.propagate(delta_t, convert_g(x_acc), convert_g(y_acc), convert_g(z_acc), rotX, rotY, delta_theta, False)
-
-		self.fp.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f," % (self.step, delta_t, x_acc, y_acc, z_acc, rotZ, rotX, rotY, delta_theta, self.acc_est.x, self.acc_est.y, self.acc_est.z, self.acc_est.theta))
-
-	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotZ):
+	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotZ, seq):
 		if (self.first_propagate):
 			self.start_gyr_heading = rotZ
 			self.first_propagate = False
@@ -101,55 +83,15 @@ class particlefilter:
 		for particle in self.particle_list:
 			particle.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta)
 
-		# self.vis_est.x += x_delta
-		# self.vis_est.y += y_delta
-		# self.vis_est.z = z_est
-		# self.vis_est.theta = mag_theta_est
-
 		#Move this to correct_alt at some point
 		self.step += 1
 		self.estimate_equal()
+		self.publish_pose()
 		self.fp_alt.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta, self.x_std, self.y_std, self.z_std, self.theta_std))
 
 
-	#Correct particles based on visual odometry and magnetometer readings
-	def correct(self, delta_t, x_vel, y_vel, z_est, magX, magY, magZ):
-		if (self.first_correct):
-			self.start_mag_heading = get_heading(magX, magY, magZ)
-			self.first_correct = False
-
-		mag_theta_est = clamp_angle(get_heading(magX, magY, magY)-self.start_mag_heading)
-		x_delta = (x_vel*cos(radians(mag_theta_est)) - y_vel*sin(radians(mag_theta_est)))*delta_t
-		y_delta = (x_vel*sin(radians(mag_theta_est)) + y_vel*cos(radians(mag_theta_est)))*delta_t
-
-		new_x = x_delta + self.est.x
-		new_y = y_delta + self.est.y
-
-		#Weight particles
-		self.weight_particles(new_x, new_y, z_est, mag_theta_est)
-
-		#Create new set of particles
-		self.particle_list = []
-
-		#Initialize the random selector. Can select items in O(1) time
-		wrand = walkerrandom(self.weight_dict.values(), self.weight_dict.keys())
-
-		for i in range(self.num_particles):
-			particle = wrand.random()
-			self.particle_list.append(particle)
-
-		self.vis_est.x += x_delta
-		self.vis_est.y += y_delta
-		self.vis_est.z = z_est
-		self.vis_est.theta = mag_theta_est
-
-		self.fp.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (x_vel, y_vel, z_est, magX, magY, magZ, mag_theta_est, new_x, new_y, self.vis_est.x, self.vis_est.y, self.est.x, self.est.y, self.est.theta))
-		self.step += 1
-		self.estimate()
-		self.update_marker()
-
-
 	def ar_correct(self, marker):
+		print "Correcting"
 		marker_id = marker.id
 		pose = marker.pose
 
@@ -202,8 +144,7 @@ class particlefilter:
 			self.weight_particles(self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta, True)
 			#Create new set of particles
 			self.particle_list = []
-
-			print len(self.weight_dict)
+			
 			#Initialize the random selector. Can select items in O(1) time
 			wrand = walkerrandom(self.weight_dict.values(), self.weight_dict.keys())
 
@@ -217,8 +158,8 @@ class particlefilter:
 					new_particle = particle(self, self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta)
 				#Randomly pick existing particle
 				else:
-					# print "Picking existing"
-					new_particle = wrand.random()
+					print "Picking existing"
+					new_particle = copy(wrand.random())
 				self.particle_list.append(new_particle)
 
 		if (len(self.particle_list) != self.num_particles):
@@ -229,18 +170,15 @@ class particlefilter:
 		
 
 
-	def update_marker(self):
-		self.est_pose.x = self.est.x
-		self.est_pose.y = self.est.y
-		self.est_pose.z = self.est.z
-		self.est_pub.publish(self.est_pose)
-
-
 	#Calculate the weight for particles
 	def weight_particles(self, x_est, y_est, z_est, theta_est, ar=False):
+		print "Weighting......."
 		self.weight_dict = dict()
+		print "Particle List:"
+		for particle in self.particle_list:
+			print particle.to_string()
+
 		weight_sum = 0
-		print "Particles : %d" % len(self.particle_list)
 		for particle in self.particle_list:
 
 			#Calculate distances
@@ -258,22 +196,22 @@ class particlefilter:
 				vert_noise = self.ar_noise
 				theta_noise = self.ar_noise
 
-			lat_weight = normpdf(lat_dist, 0, self.vis_noise) #Potentially do the z distance separately?
-			vert_weight = normpdf(vert_dist, 0, self.ultra_noise)
-			theta_weight = normpdf(theta_dist, 0, self.mag_noise)
+			lat_weight = normpdf(lat_dist, 0, lat_noise) #Potentially do the z distance separately?
+			vert_weight = normpdf(vert_dist, 0, vert_noise)
+			theta_weight = normpdf(theta_dist, 0, theta_noise)
 
 			weight = lat_weight + vert_weight + theta_weight
 
-			self.weight_dict[copy(particle)] = 1#weight
+
+			self.weight_dict[copy(particle)] = weight
 			weight_sum += weight
 
+		print "Compare to (%f, %f, %f, %f)" % (x_est, y_est, z_est, theta_est)
 		#Normalize the weights
 		for particle, weight in self.weight_dict.iteritems():
 			if (weight_sum != 0):
-				weight = weight/weight_sum
-
-		print "Weight list : %d" % len(self.weight_dict)
-		print "--------"
+				self.weight_dict[particle] = weight/weight_sum
+			print "(%s, %f)" % (particle.to_string(), self.weight_dict[particle])
 
 	
 	#Return an estimate of the pose
@@ -293,6 +231,21 @@ class particlefilter:
 		self.est.z = self.est.z/total
 		self.est.theta = self.est.theta/total
 
+	def publish_pose(self):
+		self.est_pose.position.x = self.est.x
+		self.est_pose.position.y = self.est.y
+		self.est_pose.position.z = self.est.z
+
+		rad_theta = self.est.theta*(pi/180)
+
+		quat = quaternion_about_axis(rad_theta, (0, 0, 1))
+
+		self.est_pose.orientation.x = quat[0]
+		self.est_pose.orientation.y = quat[1]
+		self.est_pose.orientation.z = quat[2]
+		self.est_pose.orientation.w = quat[3]
+
+		self.est_pub.publish(self.est_pose)
 
 
 	def estimate_equal(self):
@@ -318,13 +271,13 @@ class particlefilter:
 		self.est.z = self.est.z/total
 		self.est.theta = self.est.theta/total
 
-		self.x_std = numpy.average(x_val)
-		self.y_std = numpy.average(y_val)
-		self.z_std = numpy.average(z_val)
-		self.theta_std = numpy.average(theta_val)
+		self.x_std = numpy.std(x_val)
+		self.y_std = numpy.std(y_val)
+		self.z_std = numpy.std(z_val)
+		self.theta_std = numpy.std(theta_val)
 
 		# print("(%f, %f, %f, %f)" % (self.x_std, self.y_std, self.z_std, self.theta_std))
-		print("(%f, %f, %f, %f)" % (self.est.x, self.est.y, self.est.z, self.est.theta))
+		# print("(%f, %f, %f, %f)" % (self.est.x, self.est.y, self.est.z, self.est.theta))
 
 
 
@@ -344,49 +297,6 @@ class particle:
 		self.z_vel = 0;
 		self.theta = theta
 		self.parent = particlefilter
-
-	#Update the values of the particle based on acc and gyr data
-	def propagate(self, delta_t, x_acc, y_acc, z_acc, rotX, rotY, delta_theta, noise):
-		if (self.parent.step%100 == 0):
-			self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.x_vel, self.y_vel, self.z_vel, self.theta))
-		
-		x_acc_noise = x_acc
-		y_acc_noise = y_acc
-		z_acc_noise = z_acc
-		delta_theta_noise = delta_theta
-		rotX_noise = rotX
-		rotY_noise = rotY
-
-		if (noise):
-			x_acc_noise = random.normalvariate(x_acc, self.parent.linear_noise)
-			y_acc_noise = random.normalvariate(y_acc, self.parent.linear_noise)
-			z_acc_noise = random.normalvariate(z_acc, self.parent.linear_noise)
-			rotX_noise = random.normalvariate(rotX, self.parent.angular_noise)
-			rotY_noise = random.normalvariate(rotY, self.parent.angular_noise)
-			delta_theta_noise = random.normalvariate(delta_theta, self.parent.angular_noise)
-
-		self.theta = clamp_angle(self.theta + delta_theta_noise)
-
-		acc_m = numpy.matrix([[x_acc_noise], [y_acc_noise], [z_acc_noise], [1]])
-
-		acc_global_m = rotate(acc_m, rotX_noise, rotY_noise, self.theta)
-
-		x_acc_global = acc_global_m.item(0)
-		y_acc_global = acc_global_m.item(1)
-		z_acc_global = acc_global_m.item(2) - 0.942871 #From sensor data
-
-		self.x_vel = x_acc_global*delta_t + self.x_vel
-		self.y_vel = y_acc_global*delta_t + self.y_vel
-		self.z_vel = z_acc_global*delta_t + self.z_vel
-
-
-		x_delta = self.x_vel*delta_t
-		y_delta = self.y_vel*delta_t
-		z_delta = self.z_vel*delta_t
-
-		self.x += x_delta
-		self.y += y_delta
-		self.z += z_delta
 
 	def propagate_alt(self, delta_t, x_vel, y_vel, altd, delta_theta):
 		self.parent.fp_part.write("%d, %f, %f, %f, %f, %f, %f, %f, %f\n" % (self.parent.step, delta_t, self.x, self.y, self.z, self.theta, x_vel, y_vel, altd))

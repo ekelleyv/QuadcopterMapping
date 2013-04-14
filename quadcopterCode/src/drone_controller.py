@@ -67,13 +67,6 @@ class DroneController(DroneVideoDisplay):
 	def get_angle_diff(self):
 		return abs(clamp_angle(self.current_waypoint.theta - self.pose.theta))
 
-	#Recieve data from ROS msgs
-	def listener(self):
-		rospy.Subscriber("/ardrone/navdata", Navdata, self.update_command)
-		rospy.Subscriber("/visualization_marker", Marker, self.got_marker)
-		# spin() simply keeps python from exiting until this node is stopped
-		rospy.spin()
-
 	#Decected marker via ar_pose
 	def got_marker(self, data):
 		self.localize.ar_correct(data)
@@ -98,6 +91,7 @@ class DroneController(DroneVideoDisplay):
 		# prnt("Elapsed time: %f" % (time() - self.last_time))
 		avg = (time() - self.start_time)/self.steps
 		# print("Average time: %f" % (avg))
+		print("Command step: %d" % self.steps)
 		self.steps += 1
 		#Define tilt as being within - and + MAX values
 

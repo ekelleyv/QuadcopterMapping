@@ -34,10 +34,12 @@
 function [ data_obj ] = generate_figures( filename )
 	data_obj = importdata(filename, ',', 1);
 
-	ar_filename = strcat(filename(1:end-4), '_ar.txt')
-	alt_filename = strcat(filename(1:end-4), '_alt.txt')
+	ar_filename = strcat(filename(1:end-4), '_ar.txt');
+	alt_filename = strcat(filename(1:end-4), '_alt.txt');
+	part_filename = strcat(filename(1:end-4), '_part.txt');
 	data_ar = importdata(ar_filename, ',');
 	data_alt = importdata(alt_filename, ',');
+	data_part = importdata(part_filename, ',');
 
 	% data = data_obj.data;
 	% data = data(2:end, :);
@@ -49,12 +51,42 @@ function [ data_obj ] = generate_figures( filename )
 	% plot_acc(data);
 	% rotation_values(data);
 
-	ar_pos(data_ar);
-	alt_pos(data_alt);
+	% ar_pos(data_ar);
+	% alt_pos(data_alt);
+	particles(data_ar, data_alt, data_part);
 
 
 
 
+end
+
+function [] = particles(data_ar, data_alt, data_part)
+	last_val = data_part(end, 1);
+
+	figure;
+	hold on;
+	title('Particle Filter Estimated Position');
+	xlabel('X Position (mm)');
+	ylabel('Y Position (mm)');
+	axis equal;
+	x_avg = []
+	y_avg = []
+	for i=1:last_val
+		current_step = data_part(data_part(:, 1) == i, :);
+		x_avg(i) = mean(current_step(:, 3));
+		y_avg(i) = mean(current_step(:, 4));
+		if (mod(i, 4) == 0)
+			% scatter3(current_step(:, 3), current_step(:, 4), current_step(:, 5));
+			scatter(current_step(:, 3), current_step(:, 4));
+		end
+	end
+
+	% plot(data_ar(:, 3), data_ar(:, 4));
+	% plot(x_avg, y_avg);
+	plot(data_alt(:, 3), data_alt(:, 4), 'LineWidth', 4);
+	% plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
+	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
+	hold off;
 end
 
 function [] = ar_pos(data_ar)
@@ -73,11 +105,11 @@ function [] = alt_pos(data_alt)
 	axis equal;
 	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
 	plot(data_alt(:, 3), data_alt(:, 4));
-	for i=1:length(data_alt(:, 6))
-		x_width = 10%data_alt(i, 6) + .1
-		y_width = 10%data_alt(i, 7) + .1
-		rectangle('Position', [data_alt(i, 3) - x_width/2, data_alt(i, 4) - y_width/2, x_width, y_width])
-	end
+	% for i=1:length(data_alt(:, 6))
+	% 	x_width = 10%data_alt(i, 6) + .1
+	% 	y_width = 10%data_alt(i, 7) + .1
+	% 	rectangle('Position', [data_alt(i, 3) - x_width/2, data_alt(i, 4) - y_width/2, x_width, y_width])
+	% end
 	hold off;
 end
 

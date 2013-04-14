@@ -17,3 +17,7 @@
 *.internal
 *.includecache
 *.log
+
+CMakeCache.txt
+
+bin/*

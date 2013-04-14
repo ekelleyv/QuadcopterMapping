@@ -40,7 +40,7 @@ class BasicCommands(object):
 		self.pubReset   = rospy.Publisher('/ardrone/reset',Empty)
 		self.pubFlatTrim = rospy.Publisher('/ardrone/flattrim', Empty)
 		self.pubIMUBias = rospy.Publisher('/ardrone/imu_recalib', Empty)
-		self.pubToggle = rospy.Publisher('ardrone/setcamchannel', UInt8)
+		self.pubToggle = rospy.Publisher('/ardrone/togglecam', UInt8)
 		
 		# Allow the controller to publish to the /cmd_vel topic and thus control the drone
 		self.pubCommand = rospy.Publisher('/cmd_vel',Twist)

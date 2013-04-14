@@ -69,23 +69,37 @@ function [] = particles(data_ar, data_alt, data_part)
 	xlabel('X Position (mm)');
 	ylabel('Y Position (mm)');
 	axis equal;
-	x_avg = []
-	y_avg = []
+	x_avg = [];
+	y_avg = [];
+	x_std = [];
+	y_std = [];
 	for i=1:last_val
 		current_step = data_part(data_part(:, 1) == i, :);
 		x_avg(i) = mean(current_step(:, 3));
 		y_avg(i) = mean(current_step(:, 4));
+		x_std(i) = std(current_step(:, 3));
+		y_std(i) = std(current_step(:, 4));
 		if (mod(i, 4) == 0)
 			% scatter3(current_step(:, 3), current_step(:, 4), current_step(:, 5));
-			scatter(current_step(:, 3), current_step(:, 4));
+			% scatter(current_step(:, 3), current_step(:, 4));
 		end
 	end
 
 	% plot(data_ar(:, 3), data_ar(:, 4));
 	% plot(x_avg, y_avg);
-	plot(data_alt(:, 3), data_alt(:, 4), 'LineWidth', 4);
+	plot(data_alt(:, 7), data_alt(:, 8), 'r', 'LineWidth', 4);
+	plot(data_ar(:, 3), data_ar(:, 4),  'g', 'LineWidth', 4);
+	plot(data_alt(:, 3), data_alt(:, 4), 'b', 'LineWidth', 4);
+	
+	legend('Visual Odometry', 'AR Tag', 'Particle Filter');
 	% plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
 	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
+	hold off;
+
+	figure;
+	hold on;
+	plot(x_std);
+
 	hold off;
 end
 

@@ -243,49 +243,25 @@ std::cout << "Maximums: " << maxAngle << " " << maxPsiDot << " " << maxZDot << s
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
 	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
 
-	ROS_INFO("Initializing openCV...");
-	//make openCV windows
-	cvNamedWindow("view");
-  	cvStartWindowThread();
-
-	ROS_INFO("Initialize cmd_vel..");
-	//initialize cmd_vel
-	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
-ROS_INFO("OK1");
-	//DON'T FORGET TO PUT THIS CHECK BACK
-	while (cmd_vel.getNumSubscribers() < 1) { ;}
-ROS_INFO("OK2");
-	geometry_msgs::Twist velocity;
-ROS_INFO("OK3");
-	velocity.linear.x = 0;
-	velocity.linear.y = 0;
-	velocity.linear.z = 0;	
-	velocity.angular.x = 0;
-	velocity.angular.y = 0;
-	velocity.angular.z = 0;
-ROS_INFO("OK4");
-	//cmd_vel.publish(velocity);
-ROS_INFO("OK5");
-	//ros::spinOnce(); //reset velocity
-	//ros::Subscriber cmdvel_sub = n.subscribe("/cmd_vel", 1000, cmdVelCB);
-ROS_INFO("OK6");
 	/***INITIALIZE DRONE STUFF***/
 	ROS_INFO("Initialize drone stuff...");
 	//initialize desired waypoints
-	int numPoints = 6;
+	int numWaypoints;
 	int currentWaypoint = 0;
 	//assume units of mm
-	double* xDes = new double[numPoints];
-	double* yDes = new double[numPoints];
-	double* aDes = new double[numPoints];
-	double* tDes = new double[numPoints];	
+	std::vector<double> xDes;
+	std::vector<double> yDes;
+	std::vector<double> aDes;
+	std::vector<double> tDes;
 
-	for (int i = 0; i < numPoints; i++) {
+	tasksLoadFile("waypoints.txt", &xDes, &yDes, &aDes, &tDes, &numWaypoints); 
+
+	/*for (int i = 0; i < numPoints; i++) {
 		xDes[i] = 0;
 		yDes[i] = 0;
 		tDes[i] = -180;
 		aDes[i] = 700;
-	}
+	}*/
 
 	/*xDes[0] = 500;
 	xDes[1] = 1000;
@@ -328,13 +304,13 @@ ROS_INFO("OK6");
 	yDes[6] = 0;*/
 
 	//sine2
-	xDes[0] = 50;
-	xDes[1] = 450;
-	xDes[2] = 850;
-	xDes[3] = 1250;
-	xDes[4] = 1650;
-	xDes[5] = 2050;
-	xDes[6] = 2450;
+	/*xDes[0] = 50;
+	xDes[1] = 300;
+	xDes[2] = 500;
+	xDes[3] = 800;
+	xDes[4] = 1100;
+	xDes[5] = 1400;
+	xDes[6] = 1700;
 
 	aDes[0] = 1200;
 	aDes[1] = 1500;
@@ -342,7 +318,7 @@ ROS_INFO("OK6");
 	aDes[3] = 1000;
 	aDes[4] = 800;
 	aDes[5] = 1000;
-	aDes[6] = 1200;
+	aDes[6] = 1200;*/
 
 	//star
 	/*yDes[0] = 600;
@@ -361,27 +337,27 @@ ROS_INFO("OK6");
 
 
 	//log waypoints
-	settingsLog << " NumberWaypoints= " << numPoints << " xDes= ";
-	for (int i = 0; i < numPoints; i++) {
+	settingsLog << " NumberWaypoints= " << numWaypoints << " xDes= ";
+	for (int i = 0; i < numWaypoints; i++) {
 		settingsLog << xDes[i] << " ";
 	} 
 	settingsLog << "yDes= ";
-	for (int i = 0; i < numPoints; i++) {
+	for (int i = 0; i < numWaypoints; i++) {
 		settingsLog << yDes[i] << " ";
 	}
 	settingsLog << " altDes= ";
-	for (int i = 0; i < numPoints; i++) {
+	for (int i = 0; i < numWaypoints; i++) {
 		settingsLog << aDes[i] << " ";
 	}
 	settingsLog << " psiDes= ";
-	for (int i = 0; i < numPoints; i++) {
+	for (int i = 0; i < numWaypoints; i++) {
 		settingsLog << tDes[i] << " ";
 	}
 	settingsLog << "\n";
 
-/*for (int i = 0; i < numPoints; i++) {
+for (int i = 0; i < numWaypoints; i++) {
 		std::cout << "(" << xDes[i] << ", " << yDes[i] << "), " << aDes[i] << " " << tDes[i] << "\n";
-	}*/
+	}
 
 	//initalize drone
 	droneP = new Drone(0.0, 0.0, 0.0, updateType);
@@ -395,14 +371,32 @@ ROS_INFO("OK6");
 	settingsLog << "MaxAngle= " << droneP->_maxAngle << "MaxZDot= " << droneP->_maxZDot << "MaxPsiDot= " << droneP->_maxPsiDot << "\n";
 std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << " " << droneP->_maxZDot << " updateType= " << updateType << std::endl;
 
-//test drone library
-droneP->printState();
-/*droneP->calculateControl(xDes[0], yDes[0], aDes[0], tDes[0]);
-droneP->printState();
-droneP->translateControl();
-droneP->printState();*/
-
 	/***AR.DRONE TAKEOFF***/
+	ROS_INFO("Initializing openCV...");
+	//make openCV windows
+	cvNamedWindow("view");
+  	cvStartWindowThread();
+
+	ROS_INFO("Zeroing cmd_vel..");
+	//initialize cmd_vel
+	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
+
+	//DON'T FORGET TO PUT THIS CHECK BACK
+	while (cmd_vel.getNumSubscribers() < 1) { ;}
+
+	geometry_msgs::Twist velocity;
+
+	velocity.linear.x = 0;
+	velocity.linear.y = 0;
+	velocity.linear.z = 0;	
+	velocity.angular.x = 0;
+	velocity.angular.y = 0;
+	velocity.angular.z = 0;
+
+	//cmd_vel.publish(velocity);
+	//ros::spinOnce(); //reset velocity
+	//ros::Subscriber cmdvel_sub = n.subscribe("/cmd_vel", 1000, cmdVelCB);
+
 	//command take off
 	ROS_INFO("Taking off..");	
 	ros::Publisher takeoff = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1000);
@@ -535,7 +529,7 @@ droneP->printState();*/
 			hover = false;
 			currentWaypoint = currentWaypoint + 1;
 			ROS_INFO("Moving to waypoint %d...", currentWaypoint);
-			if (currentWaypoint >= numPoints) {
+			if (currentWaypoint >= numWaypoints) {
 				ROS_INFO("All waypoints visited!");
 				break;
 			}
@@ -565,14 +559,13 @@ settingsLog << "thetades= " << velocity.linear.x << " phides= " << velocity.line
 	//exit cleanly
 	cvDestroyWindow("view");
 	navLog.close();
+	settingsLog.close();
+	predictLog.close();
+	controlLog.close();
 
-	/*//free memory
-	droneP->~Drone();
+	//free memory
+	//droneP->~Drone();
 	//delete droneP;
-	delete [] xDes;
-	delete [] yDes;
-	delete [] aDes;
-	delete [] tDes; */
 
 	return 0;
 

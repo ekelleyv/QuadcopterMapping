@@ -94,4 +94,55 @@ int processCmdLine(int argc, char** argv, double* maxAngle, double* maxZDot, dou
     return 0;
 }
 
-#endif _FUNCTIONS_CPP
+/*
+ * Loads waypoints from the textfile waypoints.txt
+ * Assumes waypoints.txt is in current folder.
+ * 
+ * file format: 
+ * 	[Desired x],[Desired y],[Desired z],[Desired yaw]
+ * 	...
+ * 
+ * NO SPACES BETWEEN COMMAS IN FILENAME
+ */
+int tasksLoadFile(const char* fname, std::vector<double>* xDes, std::vector<double>* yDes, std::vector<double>* aDes, std::vector<double>* tDes, int* numWaypoints){
+    ifstream inFile (fname);
+    string line;
+    int linenum = 0;
+    while (getline (inFile, line))
+    {
+        linenum++;
+        //cout << "\nLine #" << linenum << ":" << endl;
+        istringstream linestream(line);
+        string item;
+        int itemnum = 0;
+        while (getline (linestream, item, ','))
+        {
+            itemnum++;
+	    
+	    switch(itemnum){
+                //for help
+            case 1:
+                xDes->push_back(atof(item.c_str()));
+                break;
+            case 2:
+                yDes->push_back(atof(item.c_str()));
+                break;
+            case 3:
+                aDes->push_back(atof(item.c_str()));
+                break;
+            case 4:
+                tDes->push_back(atof(item.c_str()));
+                break;
+            default:
+                error("Too many fields in waypoints.txt!");
+            }
+            //cout << "Item #" << itemnum << ": " << item << endl;
+        }
+    }
+
+    *numWaypoints = linenum;
+
+    return 0;
+}
+
+#endif _FUNCTIONS_CPP    

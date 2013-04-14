@@ -1,0 +1,77 @@
+readme
+
+NOTE: USING STATE UPDATE 2, MEANING X AND Y STATES AREN"T BEING UPDATED IN THE DRONE!
+
+yaw:
+	try to make the yaw controller gain higher to lower drift - turn up gain as far as possible until oscillation happens
+	trial1: gain at 3, desired is 5
+	trial2: gain is at 3, desired is 170
+	trial3: desired is -50
+	trial4: turned up to 3.5, could do -5 without moving essentially
+	trial5: desired is -50
+	trial6: desired is 120
+	trial7: desired is 7, -12, 5
+	trial8: desired is 15, 160, -5
+
+turned up gain until the drone could hit -5 without drifting
+
+
+
+z: 
+	trial1: desired is 1000 at original gain
+	trial2: turn up gain to 0.5
+	trial3: turned up gain to 0.75
+	trial4: try 2000 as desired, no drift!
+	trial5: 1000, 500, 1500
+switched to update type 0
+	trial6: 1000, 1500, 2000 - so pretty!
+
+
+
+sine: 
+	trial1: sine wave using update type 0, really not bad, distances clearly off
+	trial2: more waypoints, really good! 
+	trial3: using update type 1, pretty awful
+
+
+x
+	trial1: x = 1000
+	trial2: x = 500, -400, 1000
+
+
+star:
+	trial1: star flight, mode 0, pretty successful :D
+	trial2: SO GOOD!
+	trial3: record - not as good as last one, but okay
+	trial4: use state estimation, lots of drift, record
+
+
+square: 	
+	trial1: with navdata update type 0, scales really small (distances clealry off), didn't start and end at rigth place
+	trial2: larger scales, pretty well, some oscillations but wow
+	trial3: try with tum_ardrone x and y measurements, wetn crazy, forget this 
+
+spiral:
+	trial1: try figure 8 pattern! mode 0, hit all the waypoints, looked so goood!, recorded
+	trial2: mode 3, drift towards end
+	trial3: try again with larger values, drifted, recorded
+	trial4: try again with mode 3
+
+
+
+
+
+squareHead: square but change the heading
+	trial1: wow that's really bad
+	trial2: tried only 2 points, turn stay for 0.1s, then move and hover, drift is bad in gyro - use filtered data? need filtered data.tried turning up gain for this one but it didn't help
+
+
+
+
+
+circle: 
+	trial1: got to point 3, got very very very lost
+	trial2: good until point 4 or so...
+
+
+

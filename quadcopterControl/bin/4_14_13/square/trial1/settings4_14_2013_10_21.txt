@@ -1,0 +1,4 @@
+ NumberWaypoints= 5 xDes= 0 1000 1000 0 0 yDes= 0 0 -600 -600 0  altDes= 700 700 700 700 700  psiDes= -180 -180 -180 -180 -180 
+Controlgains: xPID= 0.001 2.68e-06 0 yPID= 0.001 1.17e-06 0 yawPID= 3.5 0 0 zPID= 0.75 0.0056 0
+MaxAngle= 12MaxZDot= 700MaxPsiDot= 100 updateType= 0
+hoverTime= 0.5 angleThreshold= 5 distThreshold= 100 zThreshold= 50

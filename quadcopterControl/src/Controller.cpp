@@ -22,10 +22,10 @@ Controller::Controller() {
 	_kpY = 0.001;
 	_kdY = 1.17e-6;
 	_kiY = 0;
-	_kpA = 0.19;
+	_kpA = 0.75;
 	_kdA = 0.0056;
 	_kiA = 0;
-	_kpT = 1.16;
+	_kpT = 3.5;
 	_kdT = 0;
 	_kiT = 0;
 

@@ -87,20 +87,20 @@ function [] = particles(data_ar, data_alt, data_part)
 
 	% plot(data_ar(:, 3), data_ar(:, 4));
 	% plot(x_avg, y_avg);
-	plot(data_alt(:, 7), data_alt(:, 8), 'r', 'LineWidth', 4);
-	plot(data_ar(:, 3), data_ar(:, 4),  'g', 'LineWidth', 4);
-	plot(data_alt(:, 3), data_alt(:, 4), 'b', 'LineWidth', 4);
+	plot3(data_alt(:, 7), data_alt(:, 8), data_alt(:, 9), 'r', 'LineWidth', 4);
+	plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5),  'g', 'LineWidth', 4);
+	plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5), 'b', 'LineWidth', 4);
 	
 	legend('Visual Odometry', 'AR Tag', 'Particle Filter');
 	% plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
 	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
 	hold off;
 
-	figure;
-	hold on;
-	plot(x_std);
+	% figure;
+	% hold on;
+	% plot(x_std);
 
-	hold off;
+	% hold off;
 end
 
 function [] = ar_pos(data_ar)

@@ -26,7 +26,7 @@ class localize:
 		# self.pf = particlefilter(num_particles=10, vis_noise = 0, ultra_noise = 0, linear_noise = 0, angular_noise = 0, ar_noise=100, ar_resample_rate=0, ar_resample=True)
 		
 		#Noisy resample
-		self.pf = particlefilter(num_particles=100, vis_noise = 100, ultra_noise = 100, linear_noise = 0, angular_noise = .01, ar_noise=100, ar_resample_rate=0, ar_resample=True)
+		self.pf = particlefilter(num_particles=100, vis_noise = 100, ultra_noise = 100, linear_noise = 0, angular_noise = .01, ar_noise=100, ar_resample_rate=10, ar_resample=True)
 		self.first_update = True
 
 

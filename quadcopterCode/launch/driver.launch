@@ -40,4 +40,6 @@
 	<param name="camera_info_topic" type="string" value="/ardrone/bottom/camera_info"/>
 </node>
 
+<node name="command_controller.py" pkg="quadcopterCode" type="command_controller.py" respawn="false" output="screen" />
+
 </launch>

@@ -24,7 +24,7 @@ from tf.transformations import *
 from tf import TransformerROS
 
 class particlefilter:
-	def __init__(self, num_particles=100, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3, ar_noise=10, ar_resample_rate=30, ar_resample=True):
+	def __init__(self, num_particles=100, vis_noise=10, ultra_noise=100, mag_noise=37, linear_noise=.002, angular_noise=2.3, ar_noise=10, ar_resample_rate=10, ar_resample=True):
 		print("Starting a particle filer with %d particles" % num_particles)
 		self.filename = os.path.expanduser("~/Dropbox/thesis_data/" + time.strftime('%Y_%m_%d_%H_%M_%S')) #in the format YYYYMMDDHHMMSS
 		self.fp = open(self.filename + ".txt", "w")
@@ -67,7 +67,7 @@ class particlefilter:
 		self.transformer = TransformerROS()
 		self.publish_pose()
 
-	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotZ, seq):
+	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotZ):
 		if (self.first_propagate):
 			self.start_gyr_heading = rotZ
 			self.first_propagate = False
@@ -75,10 +75,11 @@ class particlefilter:
 		# print "Zeroed rotZ: %f" % clamp_angle(rotZ - self.start_gyr_heading)
 		delta_theta = clamp_angle((rotZ - self.start_gyr_heading) - self.est.theta)
 
+		self.vis_est.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta, False)
+
 		for particle in self.particle_list:
 			particle.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta, True)
 
-		self.vis_est.propagate_alt(delta_t, x_vel, y_vel, altd, delta_theta, False)
 
 		#Move this to correct_alt at some point
 		self.step += 1
@@ -88,7 +89,7 @@ class particlefilter:
 
 
 	def ar_correct(self, marker):
-		print "Correcting"
+		# print "Correcting"
 		marker_id = marker.id
 		pose = marker.pose
 
@@ -151,11 +152,11 @@ class particlefilter:
 				rand_val = random.random()
 				threshold = self.ar_resample_rate/100.0
 				if (rand_val < threshold):
-					print "Particle at (%f, %f, %f, %f)" % (self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta)
+					# print "Particle at (%f, %f, %f, %f)" % (self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta)
 					new_particle = particle(self, self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta)
 				#Randomly pick existing particle
 				else:
-					print "Picking existing"
+					# print "Picking existing"
 					new_particle = copy(wrand.random())
 				self.particle_list.append(new_particle)
 
@@ -169,11 +170,11 @@ class particlefilter:
 
 	#Calculate the weight for particles
 	def weight_particles(self, x_est, y_est, z_est, theta_est, ar=False):
-		print "Weighting......."
+		# print "Weighting......."
 		self.weight_dict = dict()
-		print "Particle List:"
-		for particle in self.particle_list:
-			print particle.to_string()
+		# print "Particle List:"
+		# for particle in self.particle_list:
+		# 	print particle.to_string()
 
 		weight_sum = 0
 		for particle in self.particle_list:
@@ -203,12 +204,12 @@ class particlefilter:
 			self.weight_dict[copy(particle)] = weight
 			weight_sum += weight
 
-		print "Compare to (%f, %f, %f, %f)" % (x_est, y_est, z_est, theta_est)
+		# print "Compare to (%f, %f, %f, %f)" % (x_est, y_est, z_est, theta_est)
 		#Normalize the weights
 		for particle, weight in self.weight_dict.iteritems():
 			if (weight_sum != 0):
 				self.weight_dict[particle] = weight/weight_sum
-			print "(%s, %f)" % (particle.to_string(), self.weight_dict[particle])
+			# print "(%s, %f)" % (particle.to_string(), self.weight_dict[particle])
 
 	
 	#Return an estimate of the pose
@@ -268,6 +269,9 @@ class particlefilter:
 		self.est.z = self.est.z/total
 		self.est.theta = self.est.theta/total
 
+		print "%s : Est" % self.est.to_string()
+		# print self.est.theta
+
 
 
 	def print_particles(self):
@@ -313,7 +317,8 @@ class particle:
 		x_vel_global_noise = random.normalvariate(x_vel_global, vis_noise)
 		y_vel_global_noise = random.normalvariate(y_vel_global, vis_noise)
 
-		z_noise = random.normalvariate(altd, ultra_noise)
+		# z_noise = random.normalvariate(altd, ultra_noise)
+		z_noise = altd
 
 		x_delta = x_vel_global_noise*delta_t
 		y_delta = y_vel_global_noise*delta_t
@@ -321,6 +326,10 @@ class particle:
 		self.x += x_delta
 		self.y += y_delta
 		self.z = z_noise
+
+		# if (not noise):
+			# print "(%f, %f)" % (x_vel, y_vel)
+			# print "%s : Vis" % self.to_string() 
 
 	def to_string(self):
 		return "(%.2f, %.2f, %.2f, %.4f)" % (self.x, self.y, self.z, self.theta)

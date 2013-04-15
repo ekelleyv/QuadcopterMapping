@@ -79,12 +79,12 @@ function [] = particles(data_ar, data_alt, data_part)
 		y_avg(i) = mean(current_step(:, 4));
 		x_std(i) = std(current_step(:, 3));
 		y_std(i) = std(current_step(:, 4));
-		if (mod(i, 4) == 0)
+		if (mod(i, 1) == 0)
 			% scatter3(current_step(:, 3), current_step(:, 4), current_step(:, 5));
 			% scatter(current_step(:, 3), current_step(:, 4));
 		end
 	end
-
+	disp(data_alt(:, 7:9))
 	% plot(data_ar(:, 3), data_ar(:, 4));
 	% plot(x_avg, y_avg);
 	plot3(data_alt(:, 7), data_alt(:, 8), data_alt(:, 9), 'r', 'LineWidth', 4);
@@ -96,11 +96,14 @@ function [] = particles(data_ar, data_alt, data_part)
 	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
 	hold off;
 
-	% figure;
-	% hold on;
-	% plot(x_std);
+	figure;
+	hold on;
+	plot(data_alt(:, 10), 'r', 'LineWidth', 2);
+	plot(data_ar(:, 6), 'b', 'LineWidth', 2);
+	plot(data_alt(:, 6), 'g', 'LineWidth', 2);
+	legend('Gyro', 'AR Tag', 'Particle Filter');
 
-	% hold off;
+	hold off;
 end
 
 function [] = ar_pos(data_ar)

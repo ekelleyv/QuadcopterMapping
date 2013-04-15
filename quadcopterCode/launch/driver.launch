@@ -3,11 +3,11 @@
   <node pkg="tf" type="static_transform_publisher" name="marker_0_broadcaster" args="0 0 0 0 0 0 world marker_0 100" />
 
   <node pkg="tf" type="static_transform_publisher" name="marker_1_broadcaster" args="2 0 0 0 0 0 world marker_1 100" />
-
+<!-- 
   <node pkg="tf" type="static_transform_publisher" name="marker_2_broadcaster" args="2 2 0 0 0 0 world marker_2 100" />
 
   <node pkg="tf" type="static_transform_publisher" name="marker_3_broadcaster" args="0 2 0 0 0 0 world marker_3 100" />
-
+ -->
   <node pkg="tf" type="static_transform_publisher" name="world_broadcaster" args="0 0 0 0 0 0 world /ardrone/ardrone_base_link 100" />
 
   <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" clear_params="true">

@@ -93,24 +93,6 @@ class DroneController(DroneVideoDisplay):
 		# print("Average time: %f" % (avg))
 		print("Command step: %d" % self.steps)
 		self.steps += 1
-		#Define tilt as being within - and + MAX values
-
-		# if ((time() - self.start_time > 5) and (time() - self.start_time < 10)):
-		# 	print("TURNING")
-		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
-		# else:
-		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=.1,z_velocity=0)
-		#SetCommand
-		# if (self.start):
-		# 	print("Taking off")
-		# 	if (self.cmd.status == DroneStatus.Emergency):
-		# 		print("Reseting Drone");
-		# 		self.cmd.SendEmergency()
-		# 	self.cmd.SendTakeoff()
-		# 	self.start = False
-		# elif (self.cmd.status == DroneStatus.Flying or self.cmd.status == DroneStatus.GotoHover or self.cmd.status == DroneStatus.Hovering):
-		# 	print("Flying")
-		# 	self.cmd.SetCommand(roll=0,pitch=0,yaw_velocity=0,z_velocity=0)
 
 def main():
 	rospy.init_node("controller")

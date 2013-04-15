@@ -52,13 +52,14 @@ using namespace std;
 #include "Drone.h"
 #include "functions.h"
 
+using namespace std;
 
 /*
  * DEFINITIONS
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
-#define ROS_WORKSPACE "/home/sytang/Dropbox/control_data/" 
+#define ROS_WORKSPACE "/home/ekelley/Dropbox/control_data/" 
 
 /*
  * GLOBAL VARIABLES
@@ -268,11 +269,11 @@ int main(int argc, char** argv) {
 	/***SET UP SERVICES***/
 	//subscribe to camera feeds
 	image_transport::ImageTransport it(n);
-	image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //forward camera
-	image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
+	//image_transport::Subscriber frontCam_sub = it.subscribe("/ardrone/front/image_raw", 1, imgCB); //forward camera
+	//image_transport::Subscriber bottomCam_sub = it.subscribe("/ardrone/bottom/image_raw", 1, imgCB); //downward camera
 
 	//service call to toggle camera
-	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/togglecam");
+	ros::ServiceClient toggleCam = n.serviceClient<std_srvs::Empty>("/ardrone/toggleCam");
 
 	//subscribe to state estimates
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
@@ -415,8 +416,8 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	/***AR.DRONE TAKEOFF***/
 	ROS_INFO("Initializing openCV...");
 	//make openCV windows
-	cvNamedWindow("view");
-  	cvStartWindowThread();
+	//cvNamedWindow("view");
+  	//cvStartWindowThread();
 
 
 
@@ -436,9 +437,9 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	//ros::Subscriber cmdvel_sub = n.subscribe("/cmd_vel", 1000, cmdVelCB);
 
 	bool cam = true; //true if facing forward
-	if (toggleCam.call(emptyCall)) { ROS_INFO("Toggling camera");}
-	else { ROS_ERROR("Failed to call toggle camera service");}//toggle the downward camera
-	cam = false;
+	//if (toggleCam.call(emptyCall)) { ROS_INFO("Toggling camera");}
+	//else { ROS_ERROR("Failed to call toggle camera service");}//toggle the downward camera
+	//cam = false;
 
 	//command take off
 	ROS_INFO("Taking off..");	
@@ -456,7 +457,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	ros::Time hoverBegin;
 
 	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
-	double angleThres = 5;
+	double angleThres = 15;
 	double distThres = 200; 
 	double zThres = 50;
 	double currentHoverTime = hoverTime[currentWaypoint];
@@ -498,7 +499,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {
 		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
-			//calculate the control signal
+			//calculate the control signal, in absoulate terms
 			//ROS_INFO("Calculating control signal...");
 			droneP->calculateControl(xDes[currentWaypoint], yDes[currentWaypoint], aDes[currentWaypoint], tDes[currentWaypoint]);
 		}
@@ -510,6 +511,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		//log control 
 		controlLog << "time= " << currentTime << " Waypoint= " << currentWaypoint << " rawErrorVals(x,y,alt,psi)= " << droneP->_droneController->_lastXErr << " " << droneP->_droneController->_lastYErr << " " << droneP->_droneController->_lastAErr << " " << droneP->_droneController->_lastTErr << " rawIntegralErrVals(x,y,alt,psi)= " << droneP->_droneController->_totalXErr << " " << droneP->_droneController->_totalYErr << " " << droneP->_droneController->_totalAErr << " " << droneP->_droneController->_totalTErr << " rawControlSignal= " << droneP->_droneController->_thetaDes << " " << droneP->_droneController->_phiDes << " " << droneP->_droneController->_psiDotDes << " " << droneP->_droneController->_zDotDes;
 
+			//translate control to being between -1 and 1
 			droneP->translateControl();
 
 			//log control 
@@ -522,21 +524,19 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
 			if ( (abs(droneP->_x - xDes[currentWaypoint]) > distThres) ) {
-				std::cout << "x control" << std::endl;
-				velocity.linear.x = droneP->_droneController->_thetaDes;
+				//limit controller for debugging
+				velocity.linear.x = min(8.0, max(-8.0, droneP->_droneController->_thetaDes));
 			}
 			if ( (abs(droneP->_y - yDes[currentWaypoint]) > distThres) ) {
-				std::cout << "y control" << std::endl;
 				//remember that adrone_autonomy will flip the phides sign
-				velocity.linear.y = droneP->_droneController->_phiDes;
+				velocity.linear.y = min(8.0, max(-8.0, droneP->_droneController->_phiDes));
 			}
 	
 			if (abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres) {
-				std::cout << "yaw control" << std::endl;
 				velocity.angular.z = droneP->_droneController->_psiDotDes;
 			}
 			if (abs(droneP->_alt - aDes[currentWaypoint]) > zThres) {
-				std::cout << "z control" << std::endl;
+
 				velocity.linear.z = droneP->_droneController->_zDotDes;
 			}
 		}
@@ -572,6 +572,15 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 			currentWaypoint = currentWaypoint + 1;
 			currentHoverTime = hoverTime[currentWaypoint];
 			ROS_INFO("Moving to waypoint %d...", currentWaypoint);
+
+			droneP->_droneController->resetController();
+			velocity.linear.x = 0;
+			velocity.linear.y = 0;
+			velocity.linear.z = 0;	
+			velocity.angular.x = 0;
+			velocity.angular.y = 0;
+			velocity.angular.z = 0;
+
 			if (currentWaypoint >= numWaypoints) {
 				ROS_INFO("All waypoints visited!");
 				break;
@@ -588,9 +597,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		//send appropriate control signal
 		cmd_vel.publish(velocity);
 
-std::cout << " point= " << currentWaypoint << " thetades= " << velocity.linear.x << " phides= " << velocity.linear.y << " X= " << droneP->_x << " Y= " << droneP->_y << " Z= " << droneP->_alt << " psi= " << droneP->_psi << " hover= " << hover << std::endl;
-settingsLog << " point= " << currentWaypoint << " thetades= " << velocity.linear.x << " phides= " << velocity.linear.y << " X= " << droneP->_x << " Y= " << droneP->_y << " Z= " << droneP->_alt << " psi= " << droneP->_psi << " hover= " << hover << "\n";
-
+std::cout << " state= " << hover << " point= " << currentWaypoint << " Position=(" << droneP->_x << ", " << droneP->_y << ", " << droneP->_alt << ", " << droneP->_psi << ") desiredAngles=(" << velocity.linear.x << ", " << velocity.linear.y  << ") Errors=(" << droneP->_droneController->_lastXErr << ", " << droneP->_droneController->_lastYErr << ", " << droneP->_droneController->_lastAErr << ", " << droneP->_droneController->_lastTErr << ")" << std::endl;
 		ros::spinOnce();
 
 	}
@@ -601,9 +608,9 @@ settingsLog << " point= " << currentWaypoint << " thetades= " << velocity.linear
 	while (land.getNumSubscribers() < 1) { ;}
 	land.publish(empty);
 	ros::spinOnce();
-	
+
 	//exit cleanly
-	cvDestroyWindow("view");
+	//cvDestroyWindow("view");
 	navLog.close();
 	settingsLog.close();
 	//predictLog.close();

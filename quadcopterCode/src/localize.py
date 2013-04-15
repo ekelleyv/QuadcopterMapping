@@ -20,13 +20,20 @@ class localize:
 		self.last_timestamp = 0
 		self.last_time = time.time()
 		self.delay = 0
+		self.buffer_index = 0
+		self.buffer_size = 10
+		self.vx_buffer = [None]*self.buffer_size
+		self.vy_buffer = [None]*self.buffer_size
+		self.altd_buffer = [None]*self.buffer_size
+		self.rotZ_buffer = [None]*self.buffer_size
+		self.buffer_timestamp = 0
 		# Noisy no resample
 		# self.pf = particlefilter(num_particles=100, vis_noise = 100, ultra_noise = 100, linear_noise = 0, angular_noise = .01, ar_noise=100, ar_resample_rate=0, ar_resample=False)
 		# No noise resample
 		# self.pf = particlefilter(num_particles=10, vis_noise = 0, ultra_noise = 0, linear_noise = 0, angular_noise = 0, ar_noise=100, ar_resample_rate=0, ar_resample=True)
 		
 		#Noisy resample
-		self.pf = particlefilter(num_particles=100, vis_noise = 100, ultra_noise = 100, linear_noise = 0, angular_noise = .01, ar_noise=100, ar_resample_rate=10, ar_resample=True)
+		self.pf = particlefilter(num_particles=200, vis_noise = 10, ultra_noise = 1, linear_noise = 0, angular_noise = .05, ar_noise=200, ar_resample_rate=15, ar_resample=True)
 		self.first_update = True
 
 
@@ -47,13 +54,29 @@ class localize:
 			self.first_update = False
 			return
 
+		self.buffer_index = (self.buffer_index+1) % self.buffer_size
+
+		self.vx_buffer[self.buffer_index] = data.vx
+		self.vy_buffer[self.buffer_index] = data.vy
+		self.altd_buffer[self.buffer_index] = data.altd
+		self.rotZ_buffer[self.buffer_index] = data.rotZ
+
+
 		delta_timestamp = timestamp - self.last_timestamp #Time in seconds
 		delta_time = new_time - self.last_time
 		self.delay += delta_time - delta_timestamp
 		# print "Percent Realtime= %3.0f%% | Total delay: %2.2f | Delta timestamp: %1.6f | Delta time: %1.6f" % ((delta_timestamp/delta_time) * 100, abs(self.delay), delta_timestamp, delta_time)
 		self.last_timestamp = timestamp
 		self.last_time = new_time
-		self.pf.propagate_alt(delta_timestamp, data.vx, data.vy, data.altd, data.rotZ, data.header.seq)
+
+		self.buffer_timestamp += delta_timestamp
+		if (self.buffer_index == (self.buffer_size-1)):
+			vx_avg = numpy.average(self.vx_buffer)
+			vy_avg = numpy.average(self.vy_buffer)
+			altd_avg = numpy.average(self.altd_buffer)
+			rotZ_avg = numpy.average(self.rotZ_buffer)
+			self.pf.propagate_alt(self.buffer_timestamp, vx_avg, vy_avg, altd_avg, rotZ_avg)
+			self.buffer_timestamp = 0
 		# self.pf.propagate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
 		# self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 

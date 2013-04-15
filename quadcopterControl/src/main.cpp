@@ -58,7 +58,7 @@ using namespace std;
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
-#define ROS_WORKSPACE "~/Dropbox/ros_workspace/QuadcopterMapping/quadcopterControl/bin/" 
+#define ROS_WORKSPACE "/home/sytang/Dropbox/control_data/" 
 
 /*
  * GLOBAL VARIABLES
@@ -418,6 +418,8 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	cvNamedWindow("view");
   	cvStartWindowThread();
 
+
+
 	ROS_INFO("Zeroing cmd_vel..");
 	//initialize cmd_vel
 	ros::Publisher cmd_vel = n.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
@@ -455,7 +457,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 
 	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
 	double angleThres = 5;
-	double distThres = 100; 
+	double distThres = 200; 
 	double zThres = 50;
 	double currentHoverTime = hoverTime[currentWaypoint];
 	settingsLog << "hoverTime= " << currentHoverTime << " angleThreshold= " << angleThres << " distThreshold= " << distThres << " zThreshold= " << zThres << "\n";

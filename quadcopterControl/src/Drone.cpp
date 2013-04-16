@@ -260,8 +260,8 @@ void Drone::updateState() {
 	else if (_updateType == 4) {
 		_x = _xpf;
 		_y = _ypf;	
-		//_alt = _zpf;
-		_alt = _altn;
+		_alt = _zpf;
+		//_alt = _altn;
 		_psi = _droneController->angleDiff((tf::getYaw(_orient)*180/M_PI), 180);
 
 		lastUpdateTime = lastPFTime;
@@ -298,10 +298,14 @@ void Drone::calculateControl(double desX, double desY, double desA, double desT)
 	double eT = _droneController->angleDiff(desT, _psi);
 
 	//update integral error
-	_droneController->_totalXErr = _droneController->_totalXErr + eX;
+	/*_droneController->_totalXErr = _droneController->_totalXErr + eX;
 	_droneController->_totalYErr = _droneController->_totalYErr + eY;
 	_droneController->_totalAErr = _droneController->_totalAErr + eA;
-	_droneController->_totalTErr = _droneController->_totalTErr + eT;
+	_droneController->_totalTErr = _droneController->_totalTErr + eT;*/
+	_droneController->_totalXErr = 0;
+	_droneController->_totalYErr = 0;
+	_droneController->_totalAErr = 0;
+	_droneController->_totalTErr = 0;
 
 	//calculate PID signal
 	_droneController->_thetaDes = (_droneController->_kpX*eX) + (_droneController->_kiX*_droneController->_totalXErr) + (_droneController->_kdX*_u);

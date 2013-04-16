@@ -25,7 +25,7 @@ Controller::Controller() {
 	_kpA = 0.75;
 	_kdA = 0.0056;
 	_kiA = 0;
-	_kpT = 2;
+	_kpT = 0.65;
 	_kdT = 0;
 	_kiT = 0;
 

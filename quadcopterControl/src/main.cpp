@@ -457,11 +457,14 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	ros::Time hoverBegin;
 
 	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
-	double angleThres = 15;
-	double distThres = 200; 
-	double zThres = 50;
+	double angleThres_ctrl = 10;
+	double distThres_ctrl = 150; 
+	double zThres_ctrl = 50;
+	double angleThres_hover = 10;
+	double distThres_hover = 200;
+	double zThres_hover = 50;
 	double currentHoverTime = hoverTime[currentWaypoint];
-	settingsLog << "hoverTime= " << currentHoverTime << " angleThreshold= " << angleThres << " distThreshold= " << distThres << " zThreshold= " << zThres << "\n";
+	settingsLog << " angleThreshold= " << angleThres_hover << " " << angleThres_ctrl << " distThreshold= " << distThres_hover << " " << distThres_ctrl << " zThreshold= " << zThres_hover << " " <<zThres_ctrl << "\n";
 
 	ROS_INFO("Begin control loop...");
 	ros::Rate loop_rate(200); //200Hz loop rate
@@ -493,70 +496,73 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 			}
 */
 
-		if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres) ||
 		(abs(droneP->_alt - aDes[currentWaypoint]) > zThres) ||
-		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {
+		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {*/
 		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
 			//calculate the control signal, in absoulate terms
 			//ROS_INFO("Calculating control signal...");
-			droneP->calculateControl(xDes[currentWaypoint], yDes[currentWaypoint], aDes[currentWaypoint], tDes[currentWaypoint]);
-		}
+		droneP->calculateControl(xDes[currentWaypoint], yDes[currentWaypoint], aDes[currentWaypoint], tDes[currentWaypoint]);
+		//}
 
 		//get elapsed time
    		long end = myclock();
-        	long currentTime = (end-programStart)/1000000.0;
+        long currentTime = (end-programStart)/1000000.0;
 
 		//log control 
 		controlLog << "time= " << currentTime << " Waypoint= " << currentWaypoint << " rawErrorVals(x,y,alt,psi)= " << droneP->_droneController->_lastXErr << " " << droneP->_droneController->_lastYErr << " " << droneP->_droneController->_lastAErr << " " << droneP->_droneController->_lastTErr << " rawIntegralErrVals(x,y,alt,psi)= " << droneP->_droneController->_totalXErr << " " << droneP->_droneController->_totalYErr << " " << droneP->_droneController->_totalAErr << " " << droneP->_droneController->_totalTErr << " rawControlSignal= " << droneP->_droneController->_thetaDes << " " << droneP->_droneController->_phiDes << " " << droneP->_droneController->_psiDotDes << " " << droneP->_droneController->_zDotDes;
 
-			//translate control to being between -1 and 1
-			droneP->translateControl();
+		//translate control to being between -1 and 1
+		droneP->translateControl();
 
-			//log control 
+		//log control 
 		controlLog << " translatedControlSignal= " << droneP->_droneController->_thetaDes << " " << droneP->_droneController->_phiDes << " " << droneP->_droneController->_psiDotDes << " " << droneP->_droneController->_zDotDes;
 
-		if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
+		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres) ||
 		(abs(droneP->_alt - aDes[currentWaypoint]) > zThres) ||
-		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {
+		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {*/
 		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
-			if ( (abs(droneP->_x - xDes[currentWaypoint]) > distThres) ) {
+			if ( (abs(droneP->_x - xDes[currentWaypoint]) > distThres_ctrl) ) {
 				//limit controller for debugging
-				velocity.linear.x = min(8.0, max(-8.0, droneP->_droneController->_thetaDes));
+				velocity.linear.x = droneP->_droneController->_thetaDes;
 			}
-			if ( (abs(droneP->_y - yDes[currentWaypoint]) > distThres) ) {
+			if ( (abs(droneP->_y - yDes[currentWaypoint]) > distThres_ctrl) ) {
 				//remember that adrone_autonomy will flip the phides sign
-				velocity.linear.y = min(8.0, max(-8.0, droneP->_droneController->_phiDes));
+				velocity.linear.y = droneP->_droneController->_phiDes;
 			}
 	
-			if (abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres) {
+			if (abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres_ctrl) {
 				velocity.angular.z = droneP->_droneController->_psiDotDes;
 			}
-			if (abs(droneP->_alt - aDes[currentWaypoint]) > zThres) {
+			if (abs(droneP->_alt - aDes[currentWaypoint]) > zThres_ctrl) {
 
 				velocity.linear.z = droneP->_droneController->_zDotDes;
 			}
-		}
+		//}
 
-		//if already at goal, begin to hover
-		else if (hover == false) {
+		//if at goal, begin to hover
+		if ( ((abs(droneP->_x - xDes[currentWaypoint]) < distThres_hover) && 
+		(abs(droneP->_y - yDes[currentWaypoint]) < distThres_hover) &&
+		(abs(droneP->_alt - aDes[currentWaypoint]) < zThres_hover) &&
+		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) < angleThres_hover)) && (hover == false) ) {
 			ROS_INFO("Begin hovering at waypoint %d...", currentWaypoint);
 			hoverBegin = ros::Time::now();
 			hover = true;
 
-			droneP->_droneController->resetController();
+			/*droneP->_droneController->resetController();
 			velocity.linear.x = 0;
 			velocity.linear.y = 0;
 			velocity.linear.z = 0;	
 			velocity.angular.x = 0;
 			velocity.angular.y = 0;
-			velocity.angular.z = 0;
+			velocity.angular.z = 0;*/
 		}
 
-		//if already hovering, keep hovering for 2 seconds
+		/*//if already hovering, keep hovering for 2 seconds
 		else if ((hover == true) && ((ros::Time::now()-hoverBegin).toSec() < currentHoverTime)) {
 			velocity.linear.x = 0;
 			velocity.linear.y = 0;
@@ -564,10 +570,10 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 			velocity.angular.x = 0;
 			velocity.angular.y = 0;
 			velocity.angular.z = 0;
-		}
+		}*/
 
 		//if done hovering, move to next goal, or land if last goal is reached
-		else {
+		if ((hover == true) && ((ros::Time::now()-hoverBegin).toSec() > currentHoverTime)) {
 			hover = false;
 			currentWaypoint = currentWaypoint + 1;
 			currentHoverTime = hoverTime[currentWaypoint];
@@ -594,10 +600,10 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		controlLog << " sentMessageTime= " << ros::Time::now().toSec() << " " << 0 << " sentLinearCommand= " << velocity.linear.x << " " << velocity.linear.y << " " << velocity.linear.z << " " << " sentAngularCommand= " << velocity.angular.x << " " << velocity.angular.y << " " << velocity.angular.z << "\n";
 		bagLog.write("controlCommands", ros::Time::now(), velocity);	
 
-		//send appropriate control signal
 		cmd_vel.publish(velocity);
 
-std::cout << " state= " << hover << " point= " << currentWaypoint << " Position=(" << droneP->_x << ", " << droneP->_y << ", " << droneP->_alt << ", " << droneP->_psi << ") desiredAngles=(" << velocity.linear.x << ", " << velocity.linear.y  << ") Errors=(" << droneP->_droneController->_lastXErr << ", " << droneP->_droneController->_lastYErr << ", " << droneP->_droneController->_lastAErr << ", " << droneP->_droneController->_lastTErr << ")" << std::endl;
+std::cout << " state= " << hover << " point= " << currentWaypoint << " Position=(" << droneP->_x << ", " << droneP->_y << ", " << droneP->_alt << ", " << droneP->_psi << ") desiredAngles=(" << velocity.linear.x << ", " << velocity.linear.y  << ", " << velocity.linear.z << ", " << velocity.angular.z << ") Errors=(" << droneP->_droneController->_lastXErr << ", " << droneP->_droneController->_lastYErr << ", " << droneP->_droneController->_lastAErr << ", " << droneP->_droneController->_lastTErr << ")" << std::endl;
+settingsLog << " state= " << hover << " point= " << currentWaypoint << " Position=(" << droneP->_x << ", " << droneP->_y << ", " << droneP->_alt << ", " << droneP->_psi << ") desiredAngles=(" << velocity.linear.x << ", " << velocity.linear.y  << ", " << velocity.linear.z << ", " << velocity.angular.z << ") Errors=(" << droneP->_droneController->_lastXErr << ", " << droneP->_droneController->_lastYErr << ", " << droneP->_droneController->_lastAErr << ", " << droneP->_droneController->_lastTErr << ")\n";
 		ros::spinOnce();
 
 	}

@@ -22,18 +22,20 @@ class localize:
 		self.delay = 0
 		self.buffer_index = 0
 		self.buffer_size = 10
-		self.vx_buffer = [None]*self.buffer_size
-		self.vy_buffer = [None]*self.buffer_size
-		self.altd_buffer = [None]*self.buffer_size
-		self.rotZ_buffer = [None]*self.buffer_size
+		self.vx_buffer = [0]*self.buffer_size
+		self.vy_buffer = [0]*self.buffer_size
+		self.altd_buffer = [0]*self.buffer_size
+		self.rotX_buffer = [0]*self.buffer_size
+		self.rotY_buffer = [0]*self.buffer_size
+		self.rotZ_buffer = [0]*self.buffer_size
 		self.buffer_timestamp = 0
 		# Noisy no resample
 		# self.pf = particlefilter(num_particles=100, vis_noise = 100, ultra_noise = 100, linear_noise = 0, angular_noise = .01, ar_noise=100, ar_resample_rate=0, ar_resample=False)
 		# No noise resample
-		# self.pf = particlefilter(num_particles=10, vis_noise = 0, ultra_noise = 0, linear_noise = 0, angular_noise = 0, ar_noise=100, ar_resample_rate=0, ar_resample=True)
+		# self.pf = particlefilter(num_particles=1, vis_noise = 0, ultra_noise = 0, linear_noise = 0, angular_noise = 0, ar_noise=100, ar_resample_rate=0, ar_resample=True)
 		
 		#Noisy resample
-		self.pf = particlefilter(num_particles=200, vis_noise = 10, ultra_noise = 1, linear_noise = 0, angular_noise = .05, ar_noise=200, ar_resample_rate=15, ar_resample=True)
+		self.pf = particlefilter(num_particles=50, vis_noise = 10, ultra_noise = 1, linear_noise = 0, angular_noise = .05, ar_noise=200, ar_resample_rate=15, ar_resample=True)
 		self.first_update = True
 
 
@@ -48,17 +50,20 @@ class localize:
 		#Get delta t and update tm
 		timestamp = data.tm * .000001 #Convert microseconds to seconds
 		new_time = time.time()
+
 		if (self.first_update):
 			self.last_time = new_time
 			self.last_timestamp = timestamp
 			self.first_update = False
 			return
 
-		self.buffer_index = (self.buffer_index+1) % self.buffer_size
-
+		if (self.buffer_index >= self.buffer_size):
+			print "BUFFER INDEX TOO LARGE %d" % self.buffer_index
 		self.vx_buffer[self.buffer_index] = data.vx
 		self.vy_buffer[self.buffer_index] = data.vy
 		self.altd_buffer[self.buffer_index] = data.altd
+		self.rotX_buffer[self.buffer_index] = data.rotX
+		self.rotY_buffer[self.buffer_index] = data.rotY
 		self.rotZ_buffer[self.buffer_index] = data.rotZ
 
 
@@ -70,13 +75,17 @@ class localize:
 		self.last_time = new_time
 
 		self.buffer_timestamp += delta_timestamp
-		if (self.buffer_index == (self.buffer_size-1)):
+		self.buffer_index += 1
+		if (self.buffer_index == self.buffer_size):
 			vx_avg = numpy.average(self.vx_buffer)
 			vy_avg = numpy.average(self.vy_buffer)
 			altd_avg = numpy.average(self.altd_buffer)
+			rotX_avg = numpy.average(self.rotX_buffer)
+			rotY_avg = numpy.average(self.rotY_buffer)
 			rotZ_avg = numpy.average(self.rotZ_buffer)
-			self.pf.propagate_alt(self.buffer_timestamp, vx_avg, vy_avg, altd_avg, rotZ_avg)
 			self.buffer_timestamp = 0
+			self.buffer_index = 0
+			self.pf.propagate_alt(self.buffer_timestamp, vx_avg, vy_avg, altd_avg, rotX_avg, rotY_avg, rotZ_avg)
 		# self.pf.propagate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
 		# self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 

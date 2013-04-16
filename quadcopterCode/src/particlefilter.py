@@ -44,6 +44,9 @@ class particlefilter:
 		self.ar_resample_rate = ar_resample_rate
 		self.ar_resample = ar_resample
 
+		self.rotY = 0
+		self.rotX = 0
+
 
 		self.start_mag_heading = 0
 		self.start_gyr_heading = 0
@@ -67,10 +70,13 @@ class particlefilter:
 		self.transformer = TransformerROS()
 		self.publish_pose()
 
-	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotZ):
+	def propagate_alt(self, delta_t, x_vel, y_vel, altd, rotX, rotY, rotZ):
 		if (self.first_propagate):
 			self.start_gyr_heading = rotZ
 			self.first_propagate = False
+
+		self.rotX = rotX
+		self.rotY = rotY
 
 		# print "Zeroed rotZ: %f" % clamp_angle(rotZ - self.start_gyr_heading)
 		delta_theta = clamp_angle((rotZ - self.start_gyr_heading) - self.est.theta)
@@ -123,6 +129,20 @@ class particlefilter:
 		base_mat_inv = base_mat.getI()
 
 		origin = numpy.matrix([[0], [0], [0], [1]])
+
+		rot_y_mat = numpy.matrix([[cos(radians(self.rotY)), 0, -sin(radians(self.rotY)), 0],
+							[ 0, 1, 0, 0],
+							[ sin(radians(self.rotY)), 0, cos(radians(self.rotY)), 0],
+							[ 0, 0, 0, 1]])
+
+		rot_x_mat = numpy.matrix([[ 1, 0, 0, 0],
+							[ 0, cos(radians(self.rotX)), -sin(radians(self.rotX)), 0],
+							[ 0, sin(radians(self.rotX)), cos(radians(self.rotX)), 0],
+							[ 0, 0, 0, 1]])
+
+		rot_mat = rot_x_mat*rot_y_mat
+
+		rot_mat_inv = rot_mat.getI()
 
 		global_mat = marker_mat * pose_mat_inv * base_mat_inv
 
@@ -304,6 +324,8 @@ class particle:
 			vis_noise = self.parent.vis_noise
 			ultra_noise = self.parent.ultra_noise
 
+		if (delta_theta > 15):
+			delta_theta = 0
 
 		delta_theta_noise = random.normalvariate(delta_theta, angular_noise)
 		# print delta_theta_noise

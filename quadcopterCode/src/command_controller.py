@@ -32,7 +32,7 @@ class KeyMapping(object):
 	Takeoff          = QtCore.Qt.Key.Key_Y
 	Land             = QtCore.Qt.Key.Key_H
 	IMU              = QtCore.Qt.Key.Key_I
-	Emergency        = QtCore.Qt.Key.Key_Space
+	Emergency        = QtCore.Qt.Key.Key_P
 	Toggle			 = QtCore.Qt.Key.Key_T
 
 

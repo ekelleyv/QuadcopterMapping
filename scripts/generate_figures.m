@@ -98,9 +98,9 @@ function [] = particles(data_ar, data_alt, data_part)
 
 	figure;
 	hold on;
-	plot(data_alt(:, 10), 'r', 'LineWidth', 2);
-	plot(data_ar(:, 6), 'b', 'LineWidth', 2);
-	plot(data_alt(:, 6), 'g', 'LineWidth', 2);
+	plot(data_alt(:, 1), data_alt(:, 10), 'r', 'LineWidth', 2);
+	plot(data_ar(:, 1), data_ar(:, 6), 'b', 'LineWidth', 2);
+	plot(data_alt(:, 1), data_alt(:, 6), 'g', 'LineWidth', 2);
 	legend('Gyro', 'AR Tag', 'Particle Filter');
 
 	hold off;

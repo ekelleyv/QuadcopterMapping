@@ -95,7 +95,7 @@ class particlefilter:
 
 
 	def ar_correct(self, marker):
-		# print "Correcting"
+		print "Correcting"
 		marker_id = marker.id
 		pose = marker.pose
 
@@ -336,8 +336,8 @@ class particle:
 		self.z = z_noise
 
 		# if (not noise):
-			# print "(%f, %f)" % (x_vel, y_vel)
-			# print "%s : Vis" % self.to_string() 
+		# 	print "(%f, %f, %f)" % (delta_t, x_vel, y_vel)
+		# 	print "%s : Vis" % self.to_string() 
 
 	def to_string(self):
 		return "(%.2f, %.2f, %.2f, %.4f)" % (self.x, self.y, self.z, self.theta)

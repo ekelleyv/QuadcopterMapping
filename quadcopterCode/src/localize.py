@@ -83,9 +83,9 @@ class localize:
 			rotX_avg = numpy.average(self.rotX_buffer)
 			rotY_avg = numpy.average(self.rotY_buffer)
 			rotZ_avg = numpy.average(self.rotZ_buffer)
+			self.pf.propagate_alt(self.buffer_timestamp, vx_avg, vy_avg, altd_avg, rotX_avg, rotY_avg, rotZ_avg)
 			self.buffer_timestamp = 0
 			self.buffer_index = 0
-			self.pf.propagate_alt(self.buffer_timestamp, vx_avg, vy_avg, altd_avg, rotX_avg, rotY_avg, rotZ_avg)
 		# self.pf.propagate(delta_t, data.ax, data.ay, data.az, data.rotX, data.rotY, data.rotZ)
 		# self.pf.correct(delta_t, data.vx, data.vy, data.altd, data.magX, data.magY, data.magZ)
 

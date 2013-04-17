@@ -263,7 +263,6 @@ void Drone::updateState() {
 		_alt = _zpf;
 		//_alt = _altn;
 		_psi = _droneController->angleDiff((tf::getYaw(_orient)*180/M_PI), 180);
-
 		lastUpdateTime = lastPFTime;
 	}
 

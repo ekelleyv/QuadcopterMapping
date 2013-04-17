@@ -130,20 +130,6 @@ class particlefilter:
 
 		origin = numpy.matrix([[0], [0], [0], [1]])
 
-		rot_y_mat = numpy.matrix([[cos(radians(self.rotY)), 0, -sin(radians(self.rotY)), 0],
-							[ 0, 1, 0, 0],
-							[ sin(radians(self.rotY)), 0, cos(radians(self.rotY)), 0],
-							[ 0, 0, 0, 1]])
-
-		rot_x_mat = numpy.matrix([[ 1, 0, 0, 0],
-							[ 0, cos(radians(self.rotX)), -sin(radians(self.rotX)), 0],
-							[ 0, sin(radians(self.rotX)), cos(radians(self.rotX)), 0],
-							[ 0, 0, 0, 1]])
-
-		rot_mat = rot_x_mat*rot_y_mat
-
-		rot_mat_inv = rot_mat.getI()
-
 		global_mat = marker_mat * pose_mat_inv * base_mat_inv
 
 		global_trans = translation_from_matrix(global_mat)

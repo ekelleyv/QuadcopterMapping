@@ -21,7 +21,7 @@ class localize:
 		self.last_time = time.time()
 		self.delay = 0
 		self.buffer_index = 0
-		self.buffer_size = 10
+		self.buffer_size = 5
 		self.vx_buffer = [0]*self.buffer_size
 		self.vy_buffer = [0]*self.buffer_size
 		self.altd_buffer = [0]*self.buffer_size
@@ -59,6 +59,8 @@ class localize:
 
 		if (self.buffer_index >= self.buffer_size):
 			print "BUFFER INDEX TOO LARGE %d" % self.buffer_index
+			self.buffer_index = 0
+
 		self.vx_buffer[self.buffer_index] = data.vx
 		self.vy_buffer[self.buffer_index] = data.vy
 		self.altd_buffer[self.buffer_index] = data.altd

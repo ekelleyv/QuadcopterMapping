@@ -16,16 +16,16 @@
 
 /*Controller constructor (with default values) */
 Controller::Controller() {
-	_kpX = 0.0006; //0.0005;
+	_kpX = 0.0005; //0.0005;
 	_kdX = 2.68e-6;
 	_kiX = 0;
-	_kpY = 0.0006; //0.0005;
+	_kpY = 0.0005; //0.0005;
 	_kdY = 1.17e-6;
 	_kiY = 0;
 	_kpA = 0.75;
 	_kdA = 0.0056;
 	_kiA = 0;
-	_kpT = 0.65;
+	_kpT = 1;
 	_kdT = 0;
 	_kiT = 0;
 

@@ -111,7 +111,7 @@ class particlefilter:
 		try:
 			(marker_trans,marker_rot) = self.listener.lookupTransform('world', marker_name, rospy.Time(0))
 		except (LookupException, ConnectivityException, ExtrapolationException):
-			print("Unable to find marker transform")
+			print("Unable to find marker transform for marker %d" % marker_id)
 			return
 
 		try:
@@ -169,7 +169,6 @@ class particlefilter:
 		if (len(self.particle_list) != self.num_particles):
 			print("WRONG NUMBER OF PARTICLES")
 
-		
 		self.fp_ar.write("%d,%d,%f,%f,%f,%f\n" % (self.step, marker_id, self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta))
 		
 

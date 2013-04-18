@@ -454,11 +454,11 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	ros::Time hoverBegin;
 
 	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
-	double angleThres_ctrl = 10;
-	double distThres_ctrl = 100; 
+	double angleThres_ctrl = 1;
+	double distThres_ctrl = 50; 
 	double zThres_ctrl = 50;
 	double angleThres_hover = 10;
-	double distThres_hover = 300;
+	double distThres_hover = 200;
 	double zThres_hover = 50;
 	double currentHoverTime = hoverTime[currentWaypoint];
 	settingsLog << " angleThreshold= " << angleThres_hover << " " << angleThres_ctrl << " distThreshold= " << distThres_hover << " " << distThres_ctrl << " zThreshold= " << zThres_hover << " " <<zThres_ctrl << "\n";
@@ -563,7 +563,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres_hover) ||
 		(abs(droneP->_alt - aDes[currentWaypoint]) > zThres_hover) ||
 		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres_hover)) && (hover == true) ) {
-			//hover = false;
+			hover = false;
 		/*	velocity.linear.x = 0;
 			velocity.linear.y = 0;
 			velocity.linear.z = 0;	

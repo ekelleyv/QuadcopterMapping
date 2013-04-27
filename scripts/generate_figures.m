@@ -31,7 +31,7 @@
 % 'self.est.theta'
 
 
-function [ data_obj ] = generate_figures( filename )
+function [ data_obj ] = generate_figures( filename, percentage )
 	data_obj = importdata(filename, ',', 1);
 
 	ar_filename = strcat(filename(1:end-4), '_ar.txt');
@@ -53,57 +53,118 @@ function [ data_obj ] = generate_figures( filename )
 
 	% ar_pos(data_ar);
 	% alt_pos(data_alt);
-	particles(data_ar, data_alt, data_part);
+	particles(data_ar, data_alt, data_part, percentage);
 
 
 
 
 end
 
-function [] = particles(data_ar, data_alt, data_part)
+function [] = particles(data_ar, data_alt, data_part, percentage)
 	last_val = data_part(end, 1);
 
-	figure;
+	num = round((percentage*length(data_alt))/100);
+	disp(num);
+	hFig = figure(1);
+	set(hFig, 'Position', [0 0 800 600])
+
 	hold on;
-	title('Particle Filter Estimated Position');
-	xlabel('X Position (mm)');
-	ylabel('Y Position (mm)');
+	hTitle = title('Particle Filter Estimated Position');
+	hXLabel = xlabel('X Position (mm)');
+	hYLabel = ylabel('Y Position (mm)');
+	hZLabel = zlabel('Z Position (mm)');
+	axis([-1000  4500 -1000 3500 0 2000 0 100]);
+	view([-72 30]);
 	axis equal;
-	x_avg = [];
-	y_avg = [];
-	x_std = [];
-	y_std = [];
-	for i=1:last_val
-		current_step = data_part(data_part(:, 1) == i, :);
-		x_avg(i) = mean(current_step(:, 3));
-		y_avg(i) = mean(current_step(:, 4));
-		x_std(i) = std(current_step(:, 3));
-		y_std(i) = std(current_step(:, 4));
-		if (mod(i, 1) == 0)
-			% scatter3(current_step(:, 3), current_step(:, 4), current_step(:, 5));
-			% scatter(current_step(:, 3), current_step(:, 4));
-		end
-	end
-	disp(data_alt(:, 7:9))
-	% plot(data_ar(:, 3), data_ar(:, 4));
-	% plot(x_avg, y_avg);
-	plot3(data_alt(:, 7), data_alt(:, 8), data_alt(:, 9), 'r', 'LineWidth', 4);
-	plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5),  'g', 'LineWidth', 4);
-	plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5), 'b', 'LineWidth', 4);
+	grid on;
+	% x_avg = [];
+	% y_avg = [];
+	% x_std = [];
+	% y_std = [];
+	% for i=1:last_val
+	% 	current_step = data_part(data_part(:, 1) == i, :);
+	% 	x_avg(i) = mean(current_step(:, 3));
+	% 	y_avg(i) = mean(current_step(:, 4));
+	% 	x_std(i) = std(current_step(:, 3));
+	% 	y_std(i) = std(current_step(:, 4));
+	% 	if (mod(i, 1) == 0)
+	% 		% scatter3(current_step(:, 3), current_step(:, 4), current_step(:, 5));
+	% 		% scatter(current_step(:, 3), current_step(:, 4));
+	% 	end
+	% end
+
+	tag_loc = [0, 0, 0; 3500, 0 , 0; 3500, 2500 ,0; 0, 2500, 0];
 	
-	legend('Visual Odometry', 'AR Tag', 'Particle Filter');
-	% plot3(data_ar(:, 3), data_ar(:, 4), data_ar(:, 5));
-	% plot3(data_alt(:, 3), data_alt(:, 4), data_alt(:, 5));
-	hold off;
+	data_alt_part = data_alt(data_alt(:, 1) < num, :);
+	data_ar_part = data_ar(data_ar(:, 1) < num, :);
 
-	figure;
-	hold on;
-	plot(data_alt(:, 1), data_alt(:, 10), 'r', 'LineWidth', 2);
-	plot(data_ar(:, 1), data_ar(:, 6), 'b', 'LineWidth', 2);
-	plot(data_alt(:, 1), data_alt(:, 6), 'g', 'LineWidth', 2);
-	legend('Gyro', 'AR Tag', 'Particle Filter');
+	hVis = plot3(data_alt_part(:, 7), data_alt_part(:, 8), data_alt_part(:, 9));
+	hPF = plot3(data_alt_part(:, 3), data_alt_part(:, 4), data_alt_part(:, 5));
+	hAR = plot3(data_ar_part(:, 3), data_ar_part(:, 4), data_ar_part(:, 5));
+	hTag = plot3(tag_loc(:, 1), tag_loc(:, 2), tag_loc(:, 3));
 
-	hold off;
+	set(hVis,...
+		'LineStyle', '--',...
+		'LineWidth', 4,...
+		'Color', [.8 0 0]);
+	set(hPF,...
+		'LineWidth', 4,...
+		'Color', [0 0 .8]);
+	set(hAR,...
+		'LineStyle', 'none',...
+		'Marker', 'o',...
+		'MarkerSize', 6,...
+		'MarkerFaceColor', [0 .5 0],...
+		'MarkerEdgeColor', [0 .2 0]);
+	set(hTag,...
+		'LineStyle', 'none',...
+		'Marker', 's',...
+		'MarkerSize', 9,...
+		'MarkerFaceColor', [.2 .2 .2],...
+		'MarkerEdgeColor', [0 0 0]);
+
+	hLegend = legend( ...
+		[hVis, hPF, hAR, hTag], ...
+		'Visual Odometry' , ...
+		'Particle Filter'      , ...
+		'AR Tag Estimated Position'       , ...
+		'AR Tag Location'    , ...
+		'location', 'NorthEast' );
+
+	set(gca,...
+    'FontName', 'Helvetica');
+
+    set([hTitle, hXLabel, hYLabel, hZLabel], ...
+    'FontName', 'AvantGarde');
+
+    set([hLegend, gca],...
+    'FontSize', 10);
+    set([hXLabel, hYLabel, hZLabel],...
+    'FontSize', 12);
+
+    set( hTitle, ...
+    'FontSize', 14, ...
+    'FontWeight', 'bold');
+
+    set(gca, ...
+  'Box'         , 'off'     , ...
+  'TickDir'     , 'out'     , ...
+  'TickLength'  , [.02 .02] , ...
+  'XMinorTick'  , 'on'      , ...
+  'YMinorTick'  , 'on'      , ...
+  'ZMinorTick'  , 'on'      , ...
+  'XColor'      , [.3 .3 .3], ...
+  'YColor'      , [.3 .3 .3], ...
+  'ZColor'      , [.3 .3 .3], ...
+  'LineWidth'   , 1         );
+
+    set(gcf, 'PaperPositionMode', 'auto');
+
+
+    filename_out = strcat('3dgraph_', num2str(percentage), '.png');
+	export_fig(filename_out, '-painters', '-transparent', '-nocrop'); %-painters -nocrop
+	
+	
 end
 
 function [] = ar_pos(data_ar)

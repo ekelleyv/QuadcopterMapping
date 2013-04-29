@@ -37,25 +37,366 @@ function [ data_obj ] = generate_figures( filename, percentage )
 	ar_filename = strcat(filename(1:end-4), '_ar.txt');
 	alt_filename = strcat(filename(1:end-4), '_alt.txt');
 	part_filename = strcat(filename(1:end-4), '_part.txt');
+	sensor_filename = strcat(filename(1:end-4), '_sensor.txt');
 	data_ar = importdata(ar_filename, ',');
 	data_alt = importdata(alt_filename, ',');
 	data_part = importdata(part_filename, ',');
+	data_sensor = importdata(sensor_filename, ',');
 
 	% data = data_obj.data;
 	% data = data(2:end, :);
 	% % acc_pos(data);
 	% vis_pos(data);
 	% vis_readings(data);
-	% sensor_data(data);
 	% euler_method(data);
 	% plot_acc(data);
 	% rotation_values(data);
 
 	% ar_pos(data_ar);
 	% alt_pos(data_alt);
-	particles(data_ar, data_alt, data_part, percentage);
 
 
+	% particles(data_ar, data_alt, data_part, percentage);
+	% prism();
+	% ultra1(data_sensor);
+	% ultra2(data_sensor);
+	% gyr(data_sensor);
+	ar();
+end
+
+
+
+function [] = ar()
+	% self.step, marker_id, self.tag_est.x, self.tag_est.y, self.tag_est.z, self.tag_est.theta
+	tests_mat = ['~/Dropbox/thesis_data/2013_04_28_16_53_10.txt';
+	 '~/Dropbox/thesis_data/2013_04_28_16_54_03.txt';
+	 '~/Dropbox/thesis_data/2013_04_28_16_54_44.txt';
+	  '~/Dropbox/thesis_data/2013_04_28_16_55_27.txt';
+	  '~/Dropbox/thesis_data/2013_04_28_16_57_58.txt';
+	  '~/Dropbox/thesis_data/2013_04_28_16_59_03.txt'];
+
+	tests = cellstr(tests_mat);
+
+	percent_mat = [,];
+	xvar_mat = [,];
+	yvar_mat = [,];
+	zvar_mat = [,];
+
+	for i=1:6
+		filename = tests{i};
+		dist = (3 - (i-1)*.5)*1000;
+		ar_filename = strcat(filename(1:end-4), '_ar.txt');
+		data_ar = importdata(ar_filename, ',');
+
+		prev_step = 0;
+		missed = 0;
+		for j=1:length(data_ar)
+			step = data_ar(j, 1);
+			if ((step-prev_step) > 1)
+				missed = missed + 1;
+			end
+			prev_step = step;
+		end
+
+		percent_missed = missed/data_ar(length(data_ar), 1);
+		percent_correct = (1-percent_missed)*100;
+		percent_mat(i, :) = [dist, percent_correct];
+		xvar_mat(i, :) = [dist, std(data_ar(:, 3))];
+		yvar_mat(i, :) = [dist, std(data_ar(:, 4))];
+		zvar_mat(i, :) = [dist, std(data_ar(:, 5))];
+	end
+
+	disp(percent_mat);
+	disp(xvar_mat);
+	disp(yvar_mat);
+	disp(zvar_mat);
+	create_ar_var(xvar_mat, 'X Standard Deviation (mm)', 'x');
+	create_ar_var(yvar_mat, 'Y Standard Deviation (mm)', 'y');
+	create_ar_var(zvar_mat, 'Z Standard Deviation (mm)', 'z');
+end
+
+
+function [] = create_ar_var(data, graph_title, short)
+	hFig = figure;
+	hold on;
+	grid on;
+
+	hTitle = title(strcat(graph_title, ' vs. Distance (mm)'));
+	hXLabel = xlabel('Distance (mm)');
+	hYLabel = ylabel(graph_title);
+	hPlot = plot(data(:, 1), data(:, 2), '-s');
+
+	set(hPlot,...
+		'Color', [168/255, 191/255, 183/255],...
+		'MarkerEdgeColor',[19/255, 37/255, 55/255],...
+		'LineWidth', 3);
+
+	set(gca,...
+    'FontName', 'Helvetica');
+
+    set([hTitle, hXLabel, hYLabel], ...
+    'FontName', 'AvantGarde');
+
+    set( hTitle, ...
+    'FontSize', 14, ...
+    'FontWeight', 'bold');
+
+	     set(gca, ...
+	  'Box'         , 'off'     , ...
+	  'TickDir'     , 'out'     , ...
+	  'TickLength'  , [.02 .02] , ...
+	  'XMinorTick'  , 'on'      , ...
+	  'YMinorTick'  , 'on'      , ...
+	  'ZMinorTick'  , 'on'      , ...
+	  'XColor'      , [.3 .3 .3], ...
+	  'YColor'      , [.3 .3 .3], ...
+	  'ZColor'      , [.3 .3 .3], ...
+	  'LineWidth'   , 1         );
+
+	hold off;
+
+	set(gcf, 'PaperPositionMode', 'auto');
+
+	filename_out = strcat('artest_', short, '.png');
+
+    export_fig(filename_out, '-painters', '-transparent', '-nocrop');
+end
+
+function [] = ultra2(data_sensor)
+	hFig = figure;
+	hold on;
+	hTitle = title('Hovering Ultrasound Measurements');
+	hXLabel = xlabel('Value (mm)');
+	hYLabel = ylabel('Number of Readings');
+	bins = 10;
+
+	data_dirty = abs(data_sensor(55:154, 5));
+	data_dirty = data_dirty(isfinite(data_dirty(:, 1)), :);
+	data_clean = removeoutliers(data_dirty);
+
+	% hold on;
+	data_mean = mean(data_clean);
+	data_std = std(data_clean);
+	disp_text = sprintf( 'Standard Deviation: %3.3f\n', data_std);
+	
+	hHist = histfit(data_clean, bins);
+
+	hText = text(1925, 12, disp_text);
+
+	set(hHist(1),'facecolor',[168/255, 191/255, 183/255],...
+				'edgecolor', [42/255, 69/255, 79/255],...
+				'linewidth', 1); 
+
+	set(hHist(2),'color', [42/255, 69/255, 79/255],...
+				'linewidth', 3);
+
+	set(gca,...
+    'FontName', 'Helvetica');
+
+    set([hTitle, hXLabel, hYLabel], ...
+    'FontName', 'AvantGarde');
+
+    set( hTitle, ...
+    'FontSize', 14, ...
+    'FontWeight', 'bold');
+
+	     set(gca, ...
+	  'Box'         , 'off'     , ...
+	  'TickDir'     , 'out'     , ...
+	  'TickLength'  , [.02 .02] , ...
+	  'XMinorTick'  , 'on'      , ...
+	  'YMinorTick'  , 'on'      , ...
+	  'ZMinorTick'  , 'on'      , ...
+	  'XColor'      , [.3 .3 .3], ...
+	  'YColor'      , [.3 .3 .3], ...
+	  'ZColor'      , [.3 .3 .3], ...
+	  'LineWidth'   , 1         );
+
+    set(gcf, 'PaperPositionMode', 'auto');
+
+
+    export_fig('ultra_test2.png', '-painters', '-transparent', '-nocrop');
+
+	hold off;
+
+end
+
+function [] = ultra1(data_sensor)
+	hFig = figure;
+	hold on;
+	hTitle = title('Hovering Ultrasound Measurements');
+	hXLabel = xlabel('Value (mm)');
+	hYLabel = ylabel('Number of Readings');
+	bins = 10;
+
+	data_dirty = abs(data_sensor(19:180, 5));
+	data_dirty = data_dirty(isfinite(data_dirty(:, 1)), :);
+	data_clean = removeoutliers(data_dirty);
+
+	% hold on;
+	data_mean = mean(data_clean);
+	data_std = std(data_clean);
+	disp_text = sprintf( 'Standard Deviation: %3.3f\n', data_std);
+	
+	hHist = histfit(data_clean, bins);
+
+	hText = text(715, 25, disp_text);
+
+	set(hHist(1),'facecolor',[168/255, 191/255, 183/255],...
+				'edgecolor', [42/255, 69/255, 79/255],...
+				'linewidth', 1); 
+
+	set(hHist(2),'color', [42/255, 69/255, 79/255],...
+				'linewidth', 3);
+
+	set(gca,...
+    'FontName', 'Helvetica');
+
+    set([hTitle, hXLabel, hYLabel], ...
+    'FontName', 'AvantGarde');
+
+    set( hTitle, ...
+    'FontSize', 14, ...
+    'FontWeight', 'bold');
+
+	     set(gca, ...
+	  'Box'         , 'off'     , ...
+	  'TickDir'     , 'out'     , ...
+	  'TickLength'  , [.02 .02] , ...
+	  'XMinorTick'  , 'on'      , ...
+	  'YMinorTick'  , 'on'      , ...
+	  'ZMinorTick'  , 'on'      , ...
+	  'XColor'      , [.3 .3 .3], ...
+	  'YColor'      , [.3 .3 .3], ...
+	  'ZColor'      , [.3 .3 .3], ...
+	  'LineWidth'   , 1         );
+
+    set(gcf, 'PaperPositionMode', 'auto');
+
+    export_fig('ultra_test1.png', '-painters', '-transparent', '-nocrop');
+
+	hold off;
+
+end
+
+
+function [] = gyr(data_sensor)
+	% self.step, delta_t, x_vel, y_vel, altd, rotX, rotY, rotZ
+	hFig = figure;
+	hold on;
+	hTitle = title('Stationary Gyroscope Measurements');
+	hXLabel = xlabel('Value (degrees)');
+	hYLabel = ylabel('Number of Readings');
+	bins = 10;
+
+	data_dirty = abs(data_sensor(:, 8));
+	data_dirty = data_dirty(isfinite(data_dirty(:, 1)), :);
+	data_clean = removeoutliers(data_dirty);
+
+	% hold on;
+	data_mean = mean(data_clean);
+	data_std = std(data_clean);
+	disp_text = sprintf( 'Standard Deviation: %3.3f\n', data_std);
+
+	data_clean = data_clean - data_mean;
+	
+	hHist = histfit(data_clean, bins);
+
+	hText = text(-17, 50, disp_text);
+
+	set(hHist(1),'facecolor',[168/255, 191/255, 183/255],...
+				'edgecolor', [42/255, 69/255, 79/255],...
+				'linewidth', 1); 
+
+	set(hHist(2),'color', [42/255, 69/255, 79/255],...
+				'linewidth', 3);
+
+	set(gca,...
+    'FontName', 'Helvetica');
+
+    set([hTitle, hXLabel, hYLabel], ...
+    'FontName', 'AvantGarde');
+
+    set( hTitle, ...
+    'FontSize', 14, ...
+    'FontWeight', 'bold');
+
+	     set(gca, ...
+	  'Box'         , 'off'     , ...
+	  'TickDir'     , 'out'     , ...
+	  'TickLength'  , [.02 .02] , ...
+	  'XMinorTick'  , 'on'      , ...
+	  'YMinorTick'  , 'on'      , ...
+	  'ZMinorTick'  , 'on'      , ...
+	  'XColor'      , [.3 .3 .3], ...
+	  'YColor'      , [.3 .3 .3], ...
+	  'ZColor'      , [.3 .3 .3], ...
+	  'LineWidth'   , 1         );
+
+    set(gcf, 'PaperPositionMode', 'auto');
+
+    export_fig('gyr_test.png', '-painters', '-transparent', '-nocrop');
+
+	hold off;
+
+end
+
+function [] = prism()
+	hFig = figure;
+	hold on;
+	grid on;
+	axis equal;
+	hTitle = title('Tag Detection Space');
+	hXLabel = xlabel('X Position (mm)');
+	hYLabel = ylabel('Y Position (mm)');
+	hZLabel = zlabel('Z Position (mm)');
+	view([131 32]);
+
+	a = 1410;
+	b= 880;
+	y = [0 0 0 0; -a -a  a  a;  a -a -a  a];
+	x = [0 0 0 0; -b  b  b  b; -b -b  b -b];
+	z = [300 300 300 300; 3500 3500 3500 3500; 3500 3500 3500 3500];
+	hCone = fill3(x,y,z, [0/255, 108/255, 128/255]);
+
+	a = 135/2;
+	b = 135/2;
+	x = [-a; -a; a; a];
+	y = [-b;  b; b; -b];
+	z = [0; 0; 0; 0];
+
+	hTag = fill3(x,y,z, 'k');
+	hold off;
+
+	set(hCone,...
+		'EdgeColor', [19/255, 37/255, 55/255],...
+		'LineWidth', 2);
+
+	set(gca,...
+    'FontName', 'Helvetica');
+
+    set([hTitle, hXLabel, hYLabel, hZLabel], ...
+    'FontName', 'AvantGarde');
+
+    set( hTitle, ...
+    'FontSize', 14, ...
+    'FontWeight', 'bold');
+
+	     set(gca, ...
+	  'Box'         , 'off'     , ...
+	  'TickDir'     , 'out'     , ...
+	  'TickLength'  , [.02 .02] , ...
+	  'XMinorTick'  , 'on'      , ...
+	  'YMinorTick'  , 'on'      , ...
+	  'ZMinorTick'  , 'on'      , ...
+	  'XColor'      , [.3 .3 .3], ...
+	  'YColor'      , [.3 .3 .3], ...
+	  'ZColor'      , [.3 .3 .3], ...
+	  'LineWidth'   , 1         );
+
+    set(gcf, 'PaperPositionMode', 'auto');
+
+    export_fig('tag_detection.png', '-painters', '-transparent', '-nocrop');
 
 
 end
@@ -299,13 +640,13 @@ end
 
 function [] = sensor_data(data)
 	% Sensor data modeling
-	draw_hist('X Acceleration', data, 3, 40);
-	draw_hist('Y Acceleration', data, 4, 40);
-	draw_hist('Z Acceleration', data, 5, 40);
+	% draw_hist('X Acceleration', data, 3, 40);
+	% draw_hist('Y Acceleration', data, 4, 40);
+	% draw_hist('Z Acceleration', data, 5, 40);
 	draw_hist('Gyroscope Theta', data, 6, 40);
-	draw_hist('X Magnetometer', data, 17, 10);
-	draw_hist('Y Magnetometer', data, 18, 10);
-	draw_hist('Magnetometer Theta Est', abs(data), 20, 20);
+	% draw_hist('X Magnetometer', data, 17, 10);
+	% draw_hist('Y Magnetometer', data, 18, 10);
+	% draw_hist('Magnetometer Theta Est', abs(data), 20, 20);
 end
 
 function [m_out] = rotate(m, rotX, rotY, rotZ)

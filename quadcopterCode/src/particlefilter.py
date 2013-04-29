@@ -31,6 +31,7 @@ class particlefilter:
 		self.fp_part = open(self.filename+"_part.txt", "w")
 		self.fp_ar = open(self.filename+"_ar.txt", "w")
 		self.fp_alt = open(self.filename+"_alt.txt", "w")
+		self.fp_sensor = open(self.filename+"_sensor.txt", "w")
 		self.num_particles = num_particles
 
 
@@ -92,8 +93,7 @@ class particlefilter:
 		self.estimate_equal()
 		self.publish_pose()
 		self.fp_alt.write("%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self.step, delta_t, self.est.x, self.est.y, self.est.z, self.est.theta, self.vis_est.x, self.vis_est.y, self.vis_est.z, self.vis_est.theta))
-
-
+		self.fp_sensor.write("%d,%f,%f,%f,%f,%f,%f,%f\n" % (self.step, delta_t, x_vel, y_vel, altd, rotX, rotY, rotZ))
 	def ar_correct(self, marker):
 		print "Correcting"
 		marker_id = marker.id

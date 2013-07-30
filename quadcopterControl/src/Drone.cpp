@@ -37,6 +37,8 @@ Drone::Drone(double initialx, double initialy, double initialalt, int updateType
 	_phi = 0;
 	_psi = 0;
 
+	_yawOffset = 0;
+
 	_xn = 0;
 	_yn = 0;
 	_altn = 0;
@@ -95,6 +97,8 @@ Drone::Drone(double initialx, double initialy, double initialalt, double kpX, do
 	_phi = 0;
 	_psi = 0;
 
+	_yawOffset = 0;
+
 	_xn = initialx;
 	_yn = initialy;
 	_altn = initialalt;
@@ -151,7 +155,7 @@ void Drone::updateNavState(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 	_wdotn = msg->az;
 	_phin = msg->rotX;
 	_thetan =  msg->rotY;
-	_psin = msg->rotZ;
+	_psin = _droneController->angleSum(msg->rotZ, _yawOffset); //msg->rotZ;
 	_altn = msg->altd;
 
 	//use dead reckoning for position estimates
@@ -165,7 +169,7 @@ void Drone::updateNavState(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 }
 
 /*Update the state of the drone*/
-/*void Drone::updateTumState(const tum_ardrone::filter_state::ConstPtr& msg) {
+void Drone::updateTumState(const tum_ardrone::filter_state::ConstPtr& msg) {
 	//msg->state - use drone state somehow?
 	//invert cordinate frames nad signs to match our convention
 
@@ -181,7 +185,7 @@ void Drone::updateNavState(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 
 	lastTumTime = msg->header.stamp;
 
-}*/
+}
 
 /*Update particle filter state*/
 void Drone::updatePFState(const geometry_msgs::Pose::ConstPtr& msg) {
@@ -218,13 +222,13 @@ void Drone::updateState() {
 	else if (_updateType == 1) {
 		_x = _xt;
 		_y = _yt;
-		_alt = _altn;
+		_alt = _altt;
 		_u = _ut;
 		_v = _vt;
 		_w = _wt;
 		_phi = _phit;
 		_theta = _thetat;
-		_psi = _psin;
+		_psi = _psit;
 		lastUpdateTime = lastTumTime;
 	}
 	else if (_updateType == 2) {

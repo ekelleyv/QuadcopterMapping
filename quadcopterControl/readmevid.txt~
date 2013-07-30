@@ -1,0 +1,36 @@
+readme: 
+videos
+1. 
+0,0,700,-180,5
+0,0,700,15,5
+0,0,700,160,5
+0,0,700,-12,5
+
+2. 
+0,0,700,15,5
+0,0,700,160,5
+0,0,700,-12,5
+
+-180 is wall with posters
+
+3. -180 is wall with posters
+0,0,1000,-180,5
+0,0,500,-180,5
+0,0,1500,-180,5
+
+4. try again
+
+5. same video, front view
+
+6. yaw again, from better view
+
+7. square, go to one waypoint
+
+8. square, okay but turn down threshold and gains
+
+9. good square, no overshoots, so good
+10. filmed from above, square
+
+at 3:31pm
+
+

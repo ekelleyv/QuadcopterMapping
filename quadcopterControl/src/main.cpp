@@ -44,7 +44,7 @@ using namespace std;
 /*
  * TUM_ARDRONE INCLUDES
  */
-//#include "tum_ardrone/filter_state.h"
+#include "tum_ardrone/filter_state.h"
 
 /*
  * PROJECT INCLUDES
@@ -59,28 +59,30 @@ using namespace std;
  */
 #define MY_MASK 0777 //for setting folder permissions when using mkdir
 //path to log files, make sure trailing / is there
-#define ROS_WORKSPACE "/home/ekelley/Dropbox/control_data/" 
+#define ROS_WORKSPACE "/home/sytang/Dropbox/control_data/" 
 
 /*
  * GLOBAL VARIABLES
  */
 std::fstream settingsLog; //settings of the trial
 std::fstream navLog; //name of log file
-//std::fstream predictLog; //log predicted things
+std::fstream predictLog; //log predicted things
 std::fstream controlLog; //log control commands
 std::fstream edLog; //log particle filter things
 //rosbag::Bag bagLog("bagLog.bag", rosbag::bagmode::Write); //rosbag all messages
-int updateType = 4; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata, 4 for ed's localization code
+int updateType = 0; //0 for navdata, 1 for ptam, 2 for integrate with ptam, 3 for integrate with navdata, 4 for ed's localization code
 long programStart; //time of program start
 struct tm *now; //beginning of programming
 Drone* droneP;
+int first = 0;
+double yawOffset = 0;
 
 /*
  FUNCTION DECLARATIONS
  */
 long myclock();
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg);
-//void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
+void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg);
 void particleFilterCB(const geometry_msgs::Pose::ConstPtr& msg);
 void imgCB(const sensor_msgs::ImageConstPtr& msg);
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg);
@@ -102,6 +104,12 @@ long myclock() {
  * Callback function when navdata is updated. Logs navData in logfile. 
  */
 void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
+	//if first navdta, zero the yaw
+	if (first == 0 && msg->state == 3) {
+		first = 1;
+		droneP->_yawOffset = droneP->_droneController->angleSum(-msg->rotZ, -180);
+	}
+
 	//get elapsed time
    	long end = myclock();
         long currentTime = (end-programStart)/1000000.0;
@@ -119,7 +127,7 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 /* 
  * Callback function when predictdata is updated. Logs predictData in logfile. 
  */
-/*void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
+void predictDataCB(const tum_ardrone::filter_state::ConstPtr& msg) {
 	//get elapsed time
    	long end = myclock();
         long currentTime = (end-programStart)/1000000.0;
@@ -130,10 +138,10 @@ void navDataCB(const ardrone_autonomy::Navdata::ConstPtr& msg) {
 	//log all variables
 	predictLog << "time= " << currentTime << " messageTime= " << msg->header.stamp.toSec() << " batteryPrecent= " << msg->batteryPercent << " state= " << msg->droneState << " pos= " << msg->x << " " << msg-> y << " " << msg->z << " linearV= " << msg->dx << " " << msg->dy << " " << msg->dz << " rot= " << msg->pitch << " " << msg->roll << " " << msg->yaw << " dyaw= " << msg->dyaw << " scale= " << msg->scale << " ptamState= " << msg->ptamState << " scaleAccuracy= " << msg->scaleAccuracy;
 
-	bagLog.write("predictdata", ros::Time::now(), msg);	
+	//bagLog.write("predictdata", ros::Time::now(), msg);	
 
 	predictLog << " newPosition= " << droneP->_x << " " << droneP->_y << " angles= " << droneP->_theta << " " << droneP->_phi << " " << droneP->_psi << " altitude= " << droneP->_alt << " velocities= " << droneP->_u << " " << droneP->_v << " " << droneP->_w << " accelerations= " << droneP->_udot << " " << droneP->_vdot << " " << droneP->_wdot << "\n";
-}*/
+}
 
 void cmdVelCB(const geometry_msgs::TwistConstPtr& msg) {
 	//get elapsed time
@@ -240,9 +248,9 @@ int main(int argc, char** argv) {
 	//const char* navLogName = tmp2.c_str();
 	//navLog.open(navLogName, std::ios_base::out);
 
-	/*std::stringstream predictLogStr;
+	std::stringstream predictLogStr;
 	predictLogStr << ROS_WORKSPACE << "predictLog" << now->tm_mon+1 << "_" << now->tm_mday<< "_" << now->tm_year+1900 << "_" << now->tm_hour << "_" << now->tm_min << ".txt";
-	predictLog.open(predictLogStr.str().c_str(), std::ios_base::out);*/
+	predictLog.open(predictLogStr.str().c_str(), std::ios_base::out);
 	//const std::string tmp2_pr = predictLogStr.str();
 	//const char* predictLogName = tmp2_pr.c_str();
 	//predictLog.open(predictLogName, std::ios_base::out);
@@ -275,7 +283,7 @@ int main(int argc, char** argv) {
 
 	//subscribe to state estimates
 	ros::Subscriber navdata_sub = n.subscribe("/ardrone/navdata", 1000, navDataCB);
-	//ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
+	ros::Subscriber predictdata_sub = n.subscribe("/ardrone/predictedPose", 1000, predictDataCB);
 	ros::Subscriber particlefilter_sub = n.subscribe("/pf_localization", 1000, particleFilterCB);
 
 	/***INITIALIZE DRONE STUFF***/
@@ -446,7 +454,7 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	cmd_vel.publish(velocity);
 	takeoff.publish(empty);
 	ros::spinOnce();
-	ros::Duration(5).sleep(); // sleep to allow the drone to take off
+	ros::Duration(10).sleep(); // sleep to allow the drone to take off and stabilize measurements
 	int32_t controlFlag = 0;
 
 	/***BEGIN CONTROL LOOP***/
@@ -454,8 +462,8 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 	ros::Time hoverBegin;
 
 	//drive to waypoint only when the drone is more than 0.5m away from the desired waypoint and more than 10degrees off from the desired angle
-	double angleThres_ctrl = 1;
-	double distThres_ctrl = 50; 
+	double angleThres_ctrl = 10;
+	double distThres_ctrl = 200; 
 	double zThres_ctrl = 50;
 	double angleThres_hover = 10;
 	double distThres_hover = 200;
@@ -522,11 +530,9 @@ std::cout << "Maximums: " << droneP->_maxAngle << " " << droneP->_maxPsiDot << "
 		(abs(droneP->_droneController->angleDiff(droneP->_psi, tDes[currentWaypoint])) > angleThres)) && (hover == false) ) {*/
 		/*if ( ((abs(droneP->_x - xDes[currentWaypoint]) > distThres) || 
 		(abs(droneP->_y - yDes[currentWaypoint]) > distThres)) && (hover == false) ) {*/
-			if ( (abs(droneP->_x - xDes[currentWaypoint]) > distThres_ctrl) ) {
+			if ( (abs(droneP->_x - xDes[currentWaypoint]) > distThres_ctrl) || (abs(droneP->_y - yDes[currentWaypoint]) > distThres_ctrl) ) {
 				//limit controller for debugging
 				velocity.linear.x = droneP->_droneController->_thetaDes;
-			}
-			if ( (abs(droneP->_y - yDes[currentWaypoint]) > distThres_ctrl) ) {
 				//remember that adrone_autonomy will flip the phides sign
 				velocity.linear.y = droneP->_droneController->_phiDes;
 			}

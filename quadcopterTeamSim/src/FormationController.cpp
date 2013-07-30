@@ -1,0 +1,86 @@
+#ifndef _FORMATIONCONTROLLER_CPP_
+#define _FORMATIONCONTROLLER_CPP_
+/*
+ FormationController.cpp
+ Data type for the drone
+ Sarah Tang and Edward Francis Kelley V
+ Senior thesis, 2012-2013
+ */
+
+#include <iostream>
+
+/*
+ *QUADCOPTER_CONTROL INCLUDES
+ */
+#include "FormationController.h"
+
+/*Controller constructor (with default values) */
+FormationController::FormationController() {
+	_ka1 = -0.0002; //0.0005;
+	_ka2 = -0.0002;
+	_kc1 = -0.0002;
+	_kc2 = -0.0002; //0.0005;
+
+
+}
+
+/*Controller constructor (with specific values)*/
+FormationController::FormationController(double ka1, double ka2, double kc1, double kc2) {
+	_ka1 = ka1;
+	_ka2 = ka2;
+	_kc1 = kc1;
+	_kc2 = kc2;
+
+}
+
+/* Controller destructor*/
+FormationController::~FormationController(){
+
+};
+
+/*Take difference between two angles while keeping their difference between -180 and 180degees*/
+double FormationController::angleDiff(double a, double b) {
+	double diff = a-b;
+
+	while (diff > 180) {
+		diff = diff-360;
+	}
+	while (diff < -180) {
+		diff = diff+360;
+	}
+
+	return diff;
+}
+
+/*Take difference between two angles while keeping their difference between -180 and 180degees*/
+double FormationController::angleSum(double a, double b) {
+	double diff = a+b;
+
+	while (diff > 180) {
+		diff = diff-360;
+	}
+	while (diff < -180) {
+		diff = diff+360;
+	}
+
+	return diff;
+}
+
+
+/*Reset control values*/
+void FormationController::resetController() {
+	_thetaDes = 0;
+	_phiDes = 0;
+	_psiDotDes = 0;
+	_zDotDes = 0;
+}
+
+
+void FormationController::printState() {
+	std::cout << "Xgains= " << _ka1 << ", " << _ka2 << ", " << _kc1 << ", " << _kc2 << std::endl;
+	std::cout << "DesiredVals= " << _thetaDes << ", " << _phiDes << ", " << _psiDotDes << ", " << _zDotDes << "\n" << std::endl;
+
+}
+
+
+#endif

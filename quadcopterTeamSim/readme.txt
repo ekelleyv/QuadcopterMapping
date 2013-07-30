@@ -1,0 +1,26 @@
+readme
+
+To compile: 
+./build_sdk
+rosmake
+
+To run (with everything):
+(if simulation) roslaunch cvg_sim_test 3boxes_room.launch
+rosrun ardrone_autonomy ardrone_driver _realtime_navdata:=True _navdata_demo:=0
+rosrun tum_ardrone drone_stateestimation
+rosrun tum_ardrone drone_autopilot
+rosrun tum_ardrone drone_gui
+./quadcopterControl/quadcopter_control
+
+To collect system ID data (with manual control):
+rosrun ardrone_autonomy ardrone_driver _realtime_navdata:=True _navdata_demo:=0
+cd ./quadcopterControl/bin/quadcopter_datalog
+cd ./control_scripts/takeoff
+rostopic pub /cmd_vel geometry_msgs/Twist '[x, y, z]' '[x, y, z]' - this is between -1 and 1
+cd ./control_scripts/land
+ctrl-c out of quadcopter_datalog
+
+Ed's code
+roslaunch quadcopterCode driver.launch
+rosrun quadcopterCode localize.py
+

@@ -1,0 +1,4 @@
+<launch>
+  <node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" />
+  <node name="quadcopter_test" pkg="quadcopterContol" type="quadcopter_test" />
+</launch>
